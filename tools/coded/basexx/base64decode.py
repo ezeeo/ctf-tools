@@ -1,4 +1,4 @@
-#version 1.2
+#version 1.3
 import base64
 import sys
 
@@ -24,4 +24,10 @@ while True:
         continue
     data+='=='
     codestr = base64.b64decode(data.encode('utf-8'))
-    print(str(codestr,'utf-8'))
+    try:
+        print(str(codestr,'utf-8'))
+    except:
+        print('except:encoding utf-8')
+        print(codestr)
+        print()
+    

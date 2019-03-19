@@ -13,3 +13,4 @@ while True:
     except:
         codestr = base64.b16decode(data.encode('ascii'))
         print(str(codestr,'ascii'))
+        
