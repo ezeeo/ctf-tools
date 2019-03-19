@@ -39,7 +39,7 @@ if len(sys.argv)==2:
     print(xxcode(sys.argv[1][1:]))
     exit()
 
-print('注意:解码时会忽略长度位,如果不知道长度位是什么,请随意在开头添加字符h')
+print('注意:解码时会忽略长度位,如果不知道长度位是什么,请在开头添加字符h')
 if __name__ == '__main__':
     while True:
         data=input('xxdecode>')

@@ -14,22 +14,25 @@ def addspace(s):
         result+=i
     return result
 
-
 if len(sys.argv)==2:
     data=sys.argv[1]
-    data=bin(int(data))[2:]
+    if data[:2]=='0x':
+        data=data[2:]
+    data=bin(int(data,base=16))[2:]
     if len(data)%8!=0:
         data='0'*(8-len(data)%8)+data
     print(decode(addspace(data.replace(' ',''))))
     exit()
 
 while True:
-    data=input('convert int to str>')
+    data=input('convert hex to str>')
     if data=='exit()':
         exit()
     elif data=='':
         continue
-    data=bin(int(data))[2:]
+    if data[:2]=='0x':
+        data=data[2:]
+    data=bin(int(data,base=16))[2:]
     if len(data)%8!=0:
         data='0'*(8-len(data)%8)+data
     print(decode(addspace(data.replace(' ',''))))
