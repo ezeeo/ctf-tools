@@ -2,7 +2,7 @@
 import base64
 import sys
 
-print('可选两参数为[数据] [次数]')
+print('在附加参数调用时可选两参数为[数据] [次数]')
 
 if len(sys.argv)==2:#传入数据
     print(str(base64.b64decode((sys.argv[1]+'==').encode('utf-8')),'utf-8'))

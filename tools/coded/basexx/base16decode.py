@@ -1,4 +1,5 @@
-#version 1.0
+#coding:utf-8
+#version 1.1
 import base64
 while True:
     data=input('base16decode>')
@@ -6,5 +7,9 @@ while True:
         exit()
     elif data=='':
         continue
-    codestr = base64.b16decode(data.encode('utf-8'))
-    print(str(codestr,'utf-8'))
+    try:
+        codestr = base64.b16decode(data.encode('utf-8'))
+        print(str(codestr,'utf-8'))
+    except:
+        codestr = base64.b16decode(data.encode('ascii'))
+        print(str(codestr,'ascii'))

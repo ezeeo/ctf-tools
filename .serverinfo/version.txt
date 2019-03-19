@@ -1,7 +1,9 @@
 ./tools/builder/uploadfuzzdicbuilder.py 1.0
 ./tools/builder/一句话木马_createaword.py 1.0
 ./tools/coded/ipconvert.py 1.1
-./tools/coded/basexx/base16decode.py 1.0
+./tools/coded/Baconcipher/bacondecode_培根解密.py 1.1
+./tools/coded/Baconcipher/baconencode_培根加密.py 1.1
+./tools/coded/basexx/base16decode.py 1.1
 ./tools/coded/basexx/base16encode.py 1.0
 ./tools/coded/basexx/base32decode.py 1.0
 ./tools/coded/basexx/base32encode.py 1.0
