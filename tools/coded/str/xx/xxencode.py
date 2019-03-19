@@ -1,5 +1,6 @@
 #coding=utf-8
-#version 1.0
+#version 1.1
+import sys
 
 base="+-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 
@@ -56,8 +57,14 @@ def xxencode(s):
         num+=1
 
 
+if len(sys.argv)==2:
+    xxencode(sys.argv[1])
+    exit()
+
 print('XXencode是一种二进制到文字的编码,在上世纪后期，IBM大型机中得到很广泛的应用。现在逐渐被Base64编码转换方法所取代了。')
 print('输入要编码的字符串')
+print('注意:输出是标准格式，第一位为长度位')
+
 
 while True:
     data=input('xxencode>')

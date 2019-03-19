@@ -1,5 +1,7 @@
 #coding=utf-8
-#version 1.0
+#version 1.2
+import sys
+
 def decode(s):
     return ''.join([chr(i) for i in [int(b, 2) for b in s.split(' ')]])
 def addspace(s):
@@ -12,10 +14,20 @@ def addspace(s):
             result+=' '
         result+=i
     return result
+
+if len(sys.argv)==2:
+    data=sys.argv[1]
+    if len(data)%8!=0:
+        data='0'*(8-len(data)%8)+data
+    print(decode(addspace(data.replace(' ',''))))
+    exit()
+
 while True:
     data=input('convert bin to str>')
     if data=='exit()':
         exit()
     elif data=='':
         continue
-    print(decode(addspace('0'+data.replace(' ',''))))
+    if len(data)%8!=0:
+        data='0'*(8-len(data)%8)+data
+    print(decode(addspace(data.replace(' ',''))))
