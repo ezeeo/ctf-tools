@@ -1,3 +1,4 @@
+./tools/builder/readbp_file.py 1.0
 ./tools/builder/uploadfuzzdicbuilder.py 1.0
 ./tools/builder/一句话木马_createaword.py 1.0
 ./tools/coded/ipconvert.py 1.1
