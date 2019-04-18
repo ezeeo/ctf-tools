@@ -19,3 +19,4 @@ while True:
         continue
     codestr = encode(data)
     print(codestr)
+

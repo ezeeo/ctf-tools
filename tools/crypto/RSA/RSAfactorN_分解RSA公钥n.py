@@ -20,7 +20,7 @@ print('factordb : http://factordb.com/index.php')
 print('yaml     : http://sourceforge.net/projects/yafu/')
 print('ps:yaml 只进行基本factor操作,需要更多操作请自行访问:'+path)
 
-
+#翻译状态码
 def translate_status(s):
     result=[]
     if s.find('*')!=-1:
@@ -46,8 +46,10 @@ def translate_status(s):
     return '\n'.join(result).strip()
 
 def parse_n_for_factordb(n,raw):
-    print('search in factordb',end='',flush=True)
+    
     url='http://factordb.com/index.php?query={}'.format(n)
+    #print('url='+url)
+    print('search in factordb',end='',flush=True)
     headers = {'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
     'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36',
     'Referer':'http://factordb.com/index.php',
@@ -144,7 +146,7 @@ def parse_n_for_factordb(n,raw):
         if len(ltext)==2:
             return True
         else:
-            return False
+            return len(ltext)
     except Exception as ex:
         print('exception:'+str(ex))
         return False
@@ -169,9 +171,13 @@ if __name__ == "__main__":
     n=input('input n:')
     if n=='exit()':
         exit()
-    if parse_n_for_factordb(n,False):
+    sta=parse_n_for_factordb(n,False)
+    if sta!=False:
         r=input('success find in factordb, Need to continue local search?(y/n)')
         if r!='y' and r!='Y':
             exit()
-    run_yafu(n)
+        else:
+            run_yafu(n)
+    else:
+        run_yafu(n)
     clear_yafu()

@@ -21,6 +21,10 @@ def fix(file_name):
 
 if __name__ == "__main__":
     path=input('input png filepath:')
+    if path=='exit()':
+        exit()
+    if path[0]=='"' and path[-1]=='"':
+        path=path[1:-1]
     if fix(path):
         print('done')
     else:

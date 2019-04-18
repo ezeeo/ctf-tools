@@ -20,7 +20,7 @@ if __name__ == "__main__":
         print('-----------------big and signed-----------------')
         num=int.from_bytes(fil,byteorder='big', signed=True)
         print('int:{}\nhex:{}\noct:{}\n'.format(num,hex(num),oct(num)))
-        print('---------------big and no signed----------------')
-        num=int.from_bytes(fil,byteorder='little', signed=False)
+        print('---------------big and no signed---------------- Commonly used')
+        num=int.from_bytes(fil,byteorder='big', signed=False)
         print('int:{}\nhex:{}\noct:{}\n'.format(num,hex(num),oct(num)))
         

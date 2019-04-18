@@ -16,4 +16,30 @@ while True:
         exit()
     elif q=='':
         continue
-    print(str(quopri.decodestring(q),encoding='utf-8'))
+    success=False
+    try:
+        print(str(quopri.decodestring(q),encoding='utf-8'))
+        success=True
+    except Exception as ex:
+        print('except in encode utf-8')
+    if not success:
+        try:
+            print(str(quopri.decodestring(q),encoding='unicode'))
+            success=True
+        except Exception as ex:
+            print('except in encode unicode')
+    if not success:
+        try:
+            print(str(quopri.decodestring(q),encoding='gbk'))
+            success=True
+        except Exception as ex:
+            print('except in encode gbk')
+    if not success:
+        try:
+            print(str(quopri.decodestring(q),encoding='utf8'))
+            success=True
+        except Exception as ex:
+            print('except in encode utf8')
+    if not success:
+        print(quopri.decodestring(q))
+    

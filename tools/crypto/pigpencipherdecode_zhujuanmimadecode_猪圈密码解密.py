@@ -16,7 +16,7 @@ def pig(data):
 			new += ch
 	return new
 while True:
-    data=input('pigpen cipher encode>')
+    data=input('pigpen cipher decode>')
     if data=='exit()':
         exit()
     elif data=='':
