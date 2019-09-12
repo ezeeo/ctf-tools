@@ -1,5 +1,5 @@
 #coding=utf-8
-#version 1.1
+#version 1.2
 
 import sys
 
@@ -33,11 +33,17 @@ def main(ip):
     if ip=='exit()':
         exit()
     elif ip[:2]=='0b' or ip[:2]=='0x' or ip.find('.')==-1:#二进制输入||十六进制输入||十进制输入
-        ip=int(ip)
+        if ip[:2]=='0b':
+            ip=int(ip,base=2)
+        elif ip[:2]=='0x':
+            ip=int(ip,base=16)
+        else:
+            ip=int(ip)
         dot_ip=int_to_dot(ip)
         if dot_ip==False:
             print('ip format error')
             return
+        bin_ip=dot_to_bin(dot_ip)
     else:
         bin_ip=dot_to_bin(ip)
         if bin_ip==False:#格式不正确

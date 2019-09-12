@@ -3,7 +3,6 @@ def analyzer(payl,resu):
     import time
     if isinstance(resu,str):
         print('\r[!]'+resu,flush=True)
-        time.sleep(1)
     else:
         if resu.status_code==404:
             t=int(time.time()*1000)%6

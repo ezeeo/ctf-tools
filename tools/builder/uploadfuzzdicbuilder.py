@@ -37,7 +37,7 @@ houzhui=input('输入可上传文件后缀(1个,不要加.):')
 lan=input('输入后端语言(asp|php|jsp|all):')
 wsys=input('输入中间件(iis|apache|tomcat|all):')
 oos=input('输入操作系统(win|linux|all):')
-path=input('输入输出文件路径和名称(默认在程序根目录下)')
+#path=input('输入输出文件路径和名称(默认在程序根目录下)')
 arg=''
 if name!='':
     arg+=' -n '+name
@@ -49,10 +49,10 @@ if wsys!='':
     arg+=' -m '+wsys
 if oos!='':
     arg+=' --os '+oos
-if path=='':
-    arg+=" -o ./output/upload_fuzz_dic.txt"
-else:
-    arg+=" -o '"+path+"'"
+#if path=='':
+arg+=" -o ./output/upload_fuzz_dic.txt"
+#else:
+#    arg+=" -o "+path
 #print(pyenv+' ./Library/upload-fuzz-dic-builder/upload-fuzz-dic-builder.py'+arg)
 print('start:')
 os.system(pyenv+' ./Library/upload-fuzz-dic-builder/upload-fuzz-dic-builder.py'+arg)

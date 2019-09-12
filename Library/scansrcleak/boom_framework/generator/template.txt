@@ -70,5 +70,10 @@ www.zip
 www.7z
 www.tar.gz
 www.bak
+backup.zip
+backup.tar.gz
+backup.rar
+backup.7z
+robots.txt
 CVS/Root
 CVS/Entries

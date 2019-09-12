@@ -4,7 +4,7 @@ import sys
 import os
 from enum import Enum
 
-version='0.66'
+version='0.70'
 pypath='python'
 
 def init_pyenv():
@@ -40,7 +40,34 @@ def init_pyenv():
             f.write(pytoolsbat)
             f.close()
 
+def init_ext_lib():
+    from Library.utils.extra_lib_download import ext_downloader,shuld_download_data
+    try:
+        ext_downloader(shuld_download_data).download_ext()
+    except Exception as ex:
+        print('error:extra lib download fail->'+str(ex))
+
+
+
+def check_use_net():
+    '''检查是否使用网络(installer.exe)'''
+    if not os.path.exists('pytools.bat'):return True
+    else:
+        try:
+            with open('pytools.bat','r',encoding='utf-8') as f:
+                for line in f:
+                    if line[:6]=='::net=':
+                        if line[6]=='0':return False
+                        else:return True
+            return True
+        except Exception as ex:
+            return True
+        
+
+
+
 init_pyenv()
+init_ext_lib()
 try:
     from fuzzywuzzy import fuzz
     from fuzzywuzzy import process
@@ -144,6 +171,10 @@ def net(s):
     global tool_list
     global version_dict
     global guess_list
+    if not check_use_net():
+        print('info:network disable ->check on pytools.bat->::net=0, if net=1 ,it will enabled')
+        return
+
     if os.path.exists('installer.exe'):
         op=s.split(' ')
         if len(op)==1:
@@ -292,7 +323,11 @@ def exec_mode():
             if data.find('=')==-1 or data.find('==')!=-1:
                 data='print('+data+')'
                 pass
-            exec(data.replace('$','buffer'))
+            try:
+                exec(data.replace('$','buffer'))
+            except Exception as ex:
+                print('>>>Illegal code<<<')
+            
 
 #检查文件是否完全
 def check_file():
@@ -329,8 +364,11 @@ guess_list=get_guesslist(tool_list)
 print('use #help to view help')
 print('------success get '+str(len(tool_list))+' code block------')
 if os.path.exists('installer.exe'):
-    print('Server message:')
-    os.system('installer.exe serverinfo')
+    if check_use_net():
+        print('Server message:')
+        os.system('installer.exe serverinfo')
+    else:
+        print('info:network disable ->check on pytools.bat->::net=0, if net=1 ,it will enabled')
 else:
     print('warning:Lack network access file->installer.exe')
 
@@ -347,7 +385,7 @@ if __name__ == '__main__':
                 try:
                     exec_mode()
                 except :
-                    print('>>>Illegal code<<<')
+                    print('>>>exec error<<<')
                 print()
             elif len(code)>=2 and code[0]=='#' and code[1]=='$':
                     if len(code)>=3 and code[2]=='=':
@@ -368,5 +406,8 @@ if __name__ == '__main__':
             print('>>>Similarity is too low<<<\n')
             continue
         print('\nusing-->'+tool_list[path_num][8:-3].replace('\\','->'))
-        os.system(pypath+' '+code.replace(code.split(' ')[0],tool_list[path_num]).replace('$','"'+buffer+'"'))
+        try:
+            os.system(pypath+' '+code.replace(code.split(' ')[0],tool_list[path_num]).replace('$','"'+buffer+'"'))
+        except KeyboardInterrupt as ex:
+            pass
         print()

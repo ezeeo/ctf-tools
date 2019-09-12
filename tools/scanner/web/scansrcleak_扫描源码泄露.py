@@ -73,8 +73,9 @@ def get_base_uri(instr):
         print('[!]input web Language type or enter use default php')
         server_language_dict={'php':['php','php','php3','php4','php5','pht','phtml'],
         'asp':['asp','aspx'],
-        'html':['htm','html']}
-        Ltype=input('Language type(php,asp,html):')
+        'html':['htm','html'],
+        'jsp':['jsp','htm']}
+        Ltype=input('Language type(php,asp,html,jsp):')
         if Ltype=='exit()':exit()
         if Ltype in server_language_dict.keys():
             Ltype=server_language_dict[Ltype]

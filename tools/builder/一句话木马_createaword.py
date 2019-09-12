@@ -1,5 +1,5 @@
 #coding=utf-8
-#version 1.0
+#version 1.1
 import random
 import base64
 import sys
@@ -32,31 +32,46 @@ def main():
         print('8.php_word_coded')
         print('9.php_note_confusion')
         print('10.php_str_splicing')
+        print('11.php_免杀')
+        print('12.php_间接写马')
+        print('13.php_无?马')
+        print('14.php_过狗')
         lan=input()
-        pwd=input('输入连接密码:')
-        if lan=='5':
-            chouse=input('输入混淆选择(1-3)为空表示随机:')
-            result=php_func_encode(pwd,chouse)
-        elif lan=='7':
-            num=input('次数:')
-            result=php_muti_base64(pwd,num)
+        if lan=='12':
+            result=php_jianjiexxiema()
         else:
-            if lan=='1':
-                result=php_base(pwd)
-            elif lan=='2':
-                result=php_array_confusion1(pwd)
-            elif lan=='3':
-                result=php_array_confusion2(pwd)
-            elif lan=='4':
-                result=php_rot13(pwd)
-            elif lan=='6':
-                result=php_base64_confusion(pwd)
-            elif lan=='8':
-                result=php_word_coded(pwd)
-            elif lan=='9':
-                result=php_note_confusion(pwd)
-            elif lan=='10':
-                result=php_str_splicing(pwd)
+            pwd=input('输入连接密码:')
+            if lan=='5':
+                chouse=input('输入混淆选择(1-3)为空表示随机:')
+                result=php_func_encode(pwd,chouse)
+            elif lan=='7':
+                num=input('次数:')
+                result=php_muti_base64(pwd,num)
+            else:
+                if lan=='1':
+                    result=php_base(pwd)
+                elif lan=='2':
+                    result=php_array_confusion1(pwd)
+                elif lan=='3':
+                    result=php_array_confusion2(pwd)
+                elif lan=='4':
+                    result=php_rot13(pwd)
+                elif lan=='6':
+                    result=php_base64_confusion(pwd)
+                elif lan=='8':
+                    result=php_word_coded(pwd)
+                elif lan=='9':
+                    result=php_note_confusion(pwd)
+                elif lan=='10':
+                    result=php_str_splicing(pwd)
+                elif lan=='11':
+                    result=php_miansha(pwd)
+                elif lan=='13':
+                    result=php_no_wenhao(pwd)
+                elif lan=='14':
+                    result=php_guogou(pwd)
+    elif lan=='2':
+        pass
     print(result)
 
 if __name__ == "__main__":

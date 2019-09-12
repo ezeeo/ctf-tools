@@ -2,7 +2,7 @@
 import base64
 import sys
 
-print('在附加参数调用时可选两参数为[数据] [次数]')
+
 
 if len(sys.argv)==2:#传入数据
     print(str(base64.b64decode((sys.argv[1]+'==').encode('utf-8')),'utf-8'))
@@ -14,8 +14,9 @@ if len(sys.argv)==3:#传入数据和轮数
     for i in range(num):
         tmp=str(base64.b64decode((tmp+'==').encode('utf-8')),'utf-8')
     print(tmp)
+    exit()
 
-
+print('在附加参数调用时可选两参数为[数据] [次数]')
 while True:
     data=input('base64decode>')
     if data=='exit()':

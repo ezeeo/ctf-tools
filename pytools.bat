@@ -1,4 +1,5 @@
-﻿::1.2
+::1.2
+::net=1
 @echo off
 title pytools
 @chcp 65001
