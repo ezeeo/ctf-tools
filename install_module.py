@@ -10,7 +10,9 @@ from pip._internal.utils.misc import get_installed_distributions
 from subprocess import call
 from time import sleep
 
-version='1.2'
+from Library.utils.pbar import Pbar
+
+version='1.3'
 pypath='python'
 
 def get_pyenv():
@@ -128,6 +130,34 @@ def withupdatepip():
     auto_install(li,False)
     print('---------------end---------------')
 
+
+def bar_status():
+    bar=Pbar(speed=60,bar_fill='#',bar_moving='<=-=>',move_mode='lr')
+    bar.start_bar()
+    bar.set_rate(None,'checking lib...')
+
+    li=requisite_pip_module()
+    all_num=len(li)
+    li=should_install_modules(li)
+    should_down_num=len(li)
+
+    now_num=1
+    for i in range(int(100/all_num*(all_num-should_down_num))):
+        if i>100/all_num*now_num:now_num+=1
+
+        bar.set_speed((100-i)//3+60)
+        bar.set_rate(i,'checking lib...{}/{}'.format(now_num,all_num+1))
+
+    if len(li)==0:
+        bar.set_rate(100,'lib check pass')
+        bar.end_bar()
+    else:
+        bar.set_rate(None,'lib check fail')
+        bar.end_bar()
+        print('[-]warn:should install num '+str(len(li)))
+
+
+
 if __name__ =='__main__':
     get_pyenv()
     if len(sys.argv)==1:
@@ -140,3 +170,5 @@ if __name__ =='__main__':
         withupdatepip()
     elif sys.argv[1]=='withconfirm':
         default(True)
+    elif sys.argv[1]=='bar_status':#使用进度条显示状态
+        bar_status()

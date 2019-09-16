@@ -4,7 +4,7 @@ import sys
 import os
 from enum import Enum
 
-version='0.70'
+version='0.71'
 pypath='python'
 
 def init_pyenv():
@@ -40,6 +40,12 @@ def init_pyenv():
             f.write(pytoolsbat)
             f.close()
 
+def init_lib():
+    from install_module import bar_status
+    bar_status()
+
+
+
 def init_ext_lib():
     from Library.utils.extra_lib_download import ext_downloader,shuld_download_data
     try:
@@ -67,7 +73,9 @@ def check_use_net():
 
 
 init_pyenv()
+init_lib()
 init_ext_lib()
+
 try:
     from fuzzywuzzy import fuzz
     from fuzzywuzzy import process
