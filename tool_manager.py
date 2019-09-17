@@ -271,6 +271,8 @@ if os.path.exists('installer.exe'):
 else:
     print('warning:Lack network access file->installer.exe')
 
+buffer=''
+
 if __name__ == '__main__':
     while True:
         code=input('>')

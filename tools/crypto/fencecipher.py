@@ -1,6 +1,7 @@
 #econding:utf-8
 #version 1.0
 
+print('[+]栅栏密码解密')
 e = input('请输入要解密的字符串:')
 elen = len(e)
 field=[]

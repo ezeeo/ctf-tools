@@ -1,9 +1,21 @@
 #coding=utf-8
 #import requests
-#version 1.0
+#version 1.1
 
 import requests
-import os
+import os,sys
+path=os.path.abspath('.')
+if 'tools' in path:#这里是为了便于开发调试
+    path=path.split('tools',maxsplit=1)[0]+'Library\\utils'
+else:
+    path=path+'\\Library\\utils'
+if not path in sys.path:
+    sys.path.append(path)
+
+from pbar import Pbar
+
+bar=Pbar(info_len=25,allow_skip_frame=True)
+
 
 def Is64Windows():
   return 'PROGRAMFILES(X86)' in os.environ
@@ -46,10 +58,10 @@ def translate_status(s):
     return '\n'.join(result).strip()
 
 def parse_n_for_factordb(n,raw):
-    
+    global bar
     url='http://factordb.com/index.php?query={}'.format(n)
     #print('url='+url)
-    print('search in factordb',end='',flush=True)
+    bar.set_rate(10,'search in factordb...')
     headers = {'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
     'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36',
     'Referer':'http://factordb.com/index.php',
@@ -59,41 +71,56 @@ def parse_n_for_factordb(n,raw):
     'Cache-Control':'max-age=0',
     'Connection':'keep-alive',
     'Host':'factordb.com'}
-    print('.',end='',flush=True)
+
     try:
         timeout_num=0
         r=''
         while True:
             try:
-                print('.',end='',flush=True)
+                #print('.',end='',flush=True)
                 r=requests.get(url,headers=headers,timeout=5)
-                print('.',end='',flush=True)
+                #print('.',end='',flush=True)
+                
                 break
             except Exception as ex:
                 timeout_num+=1
                 if timeout_num<=3:
-                    print('retry.',end='',flush=True)
+                    bar.set_rate(None,'retry search...')
                 else:
-                    print('\nerror:'+str(ex))
+                    bar.print('error:'+str(ex))
+                    bar.set_rate(0,'error:'+str(ex))
                     return False
-        print('done',flush=True)
+        bar.set_rate(30,'search in factordb...done')
         
         if r.status_code!=200:
-            print('net error:r.status_code!=200')
+            bar.set_rate(0,'status_code!=200')
+            bar.print('net error:r.status_code!=200')
             return False
         r.encoding = 'utf-8'
         ltext=r.text.split('\n')
+
+        bar.set_speed(100)
+        bar.set_rate(35,'parsing...')
+
         for i in range(24):
             ltext.pop(0)
         for i in range(1,len(ltext)+1):
             if ltext[-1].find('More information')==-1:
                 ltext.pop(-1)
+
+        bar.set_rate(45,None)
+
         if len(ltext)==0:
-            print('format error:cannot find start point')
+            bar.set_rate(0,'cannot find start point')
+            bar.print('format error:cannot find start point')
             return False
         if ltext[-1].find('</table>')==-1:
-            print('format error:cannot find end point')
+            bar.set_rate(0,'cannot find end point')
+            bar.print('format error:cannot find end point')
             return False
+
+        bar.set_rate(50,None)
+
         ltext[0]=ltext[0].replace('</tr>','')
         ltext[-1]=ltext[-1][:ltext[-1].find('</table>')]
         ltext=''.join(ltext)
@@ -101,30 +128,45 @@ def parse_n_for_factordb(n,raw):
         ltext=ltext.split('</td>')
         while '' in ltext:
             ltext.remove('')
+
+        bar.set_rate(60,None)
+
         if len(ltext)!=3:
-            print('format error:table columns num error')
+            bar.set_rate(0,'table columns num error')
+            bar.print('format error:table columns num error')
             return False
         for i in range(len(ltext)):
             ltext[i]=ltext[i].replace('<td>','')
+
+        bar.set_rate(70,None)
+
         if len(ltext[0])>4:
-            print('format error:status code lenth too long')
+            bar.set_rate(0,'status code lenth too long')
+            bar.print('format error:status code lenth too long')
             return False
         if ltext[1].find('<a')==-1:
-            print('format error:digits parse error')
+            bar.set_rate(0,'digits parse error')
+            bar.print('format error:digits parse error')
             return False
-        print('------------------status------------------')
-        print(translate_status(ltext[0]))
-        print('input :'+str(n))
-        print('digits:'+ltext[1][:ltext[1].find('<a')])
-        print('------------------result------------------')
+
+        bar.set_rate(80,None)
+
+        bar.print('------------------status------------------')
+        bar.print(translate_status(ltext[0]))
+        bar.print('input :'+str(n))
+        bar.print('digits:'+ltext[1][:ltext[1].find('<a')])
+        bar.print('------------------result------------------')
         raw=ltext
         ltext=ltext[2]
         if ltext.find('</a>')==-1:#寻找目标数字的标签
-            print('format error:result format error')
+            bar.set_rate(0,'result format error')
+            bar.print('format error:result format error')
             return False
         #去掉等号左边的部分
         ltext=ltext[ltext.find('</a>'):]
         ltext=ltext[ltext.find('=')+1:].strip()
+
+        bar.set_rate(90,None)
 
         ltext=ltext.split('&middot;')
         while '' in ltext:
@@ -136,19 +178,22 @@ def parse_n_for_factordb(n,raw):
 
             ltext[i]=(ltext[i][:ltext[i].find('<')]+ltext[i][ltext[i].find('<font color=')+22:].replace('</font></a>','')).strip()
         #输出
+        bar.set_rate(100,'search success')
+
         for t in ltext:
-            print(t)
+            bar.print(t)
         if raw==True:
-            print('------------------rawdata------------------')
+            bar.print('------------------rawdata------------------')
             for t in raw:
-                print(t)
-        print('-------------------------------------------')
+                bar.print(t)
+        bar.print('-------------------------------------------')
         if len(ltext)==2:
             return True
         else:
             return len(ltext)
     except Exception as ex:
-        print('exception:'+str(ex))
+        bar.set_rate(0,'exception'+str(ex))
+        bar.print('exception:'+str(ex))
         return False
     
 
@@ -167,11 +212,16 @@ def clear_yafu():
 
 
 if __name__ == "__main__":
+    
     clear_yafu()
     n=input('input n:')
     if n=='exit()':
         exit()
+
+    bar.start_bar()
+    bar.set_rate(5,'parse_n_for_factordb...')
     sta=parse_n_for_factordb(n,False)
+    bar.end_bar(True)
     if sta!=False:
         r=input('success find in factordb, Need to continue local search?(y/n)')
         if r!='y' and r!='Y':
