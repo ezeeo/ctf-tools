@@ -4,7 +4,14 @@ import sys
 import os
 from enum import Enum
 
-version='0.71'
+from Library.utils.file_scanner import scan_files
+from Library.utils.file_input import inputfile
+from Library.utils.exec_mode import exec_mode
+from Library.utils.start_py_env import read_pyenv,write_pyenv
+from Library.utils.network_usage import check_use_net
+from Library.utils.help_info import help_info
+
+version='0.73'
 pypath='python'
 
 def init_pyenv():
@@ -14,36 +21,18 @@ def init_pyenv():
         pass#正常启动
     elif len(sys.argv)==2:
         if sys.argv[1]=='#':#从文件读取
-            if not os.path.exists('pytools.bat'):
-                print('error:start script pytools.bat not exists')
-                exit()
-            find=False
-            f=open('pytools.bat', 'r',encoding='UTF-8')
-            for line in f:
-                if line[:16]=='set python_path=':
-                    pypath=line[17:-2]
-                    find=True
-                    break
-            f.close()
+            find=read_pyenv()
             if find==False:
                 print('error:can not find pyenv in pytools.bat')
                 exit()
-        else:
+            pypath=find
+        else:#写入
             pypath=sys.argv[1]
-            pytoolsbat=''
-            f=open('pytools.bat', 'r',encoding='UTF-8')
-            for line in f:
-                if line[:16]=='set python_path=':
-                    line='set python_path="'+pypath+'"'
-                pytoolsbat+=line+'\n'
-            f=open('pytools.bat', 'w',encoding='UTF-8')
-            f.write(pytoolsbat)
-            f.close()
+            write_pyenv(pypath)
 
 def init_lib():
     from install_module import bar_status
     bar_status()
-
 
 
 def init_ext_lib():
@@ -52,24 +41,6 @@ def init_ext_lib():
         ext_downloader(shuld_download_data).download_ext()
     except Exception as ex:
         print('error:extra lib download fail->'+str(ex))
-
-
-
-def check_use_net():
-    '''检查是否使用网络(installer.exe)'''
-    if not os.path.exists('pytools.bat'):return True
-    else:
-        try:
-            with open('pytools.bat','r',encoding='utf-8') as f:
-                for line in f:
-                    if line[:6]=='::net=':
-                        if line[6]=='0':return False
-                        else:return True
-            return True
-        except Exception as ex:
-            return True
-        
-
 
 
 init_pyenv()
@@ -86,21 +57,7 @@ except:
     from fuzzywuzzy import process
 
 
-#文件索引
-def scan_files(directory,prefix=None,postfix=None):
-    files_list=[]
-    for root, sub_dirs, files in os.walk(directory):
-        for special_file in files:
-            if postfix:
-                if special_file.endswith(postfix):
-                    files_list.append(os.path.join(root,special_file))
-            elif prefix:
-                if special_file.startswith(prefix):
-                    files_list.append(os.path.join(root,special_file))
-            else:
-                files_list.append(os.path.join(root,special_file))
-                          
-    return files_list
+
 
 def scan():#扫描存在的文件
     tool_list=scan_files('.\\tools\\',postfix=".py")
@@ -158,13 +115,14 @@ def get_guesslist(tool_list):
 def code_analysis(s,tool_list):
     code_main=s.split(' ')[0]
     if code_main=='help':
-        help()
+        help_info(version)
     elif code_main=='show':
         show(s[5:],tool_list)
     elif code_main=='lib':
         lib(s[4:])
     elif code_main=='inputfile':
-        inputfile(s[10:])
+        global buffer
+        buffer=inputfile(s[10:])
     elif code_main=='search':
         search(s[7:])
     elif code_main=='net':
@@ -233,24 +191,7 @@ def search(instr):
     print()
 
 
-def help():
-    print('tool_namager version '+version)
-    print('使用‘exit()’退出程序或者模块')
-    print('直接输入模块名以使用某模块(会进行名称的模糊匹配)')
-    print('模块的调用支持参数和$传入缓冲区数据,例如 strto $')
-    print('输入##会进入执行模式(将输入作为代码执行)')
-    print('以#起始将会被判断为指令')
-    print('可用的指令:')
-    print('#help')
-    print('#show modules | version')
-    print('#reload')
-    print('#lib check')
-    print('#lib in(install) | inwc(installwithconfirm) | inwp(installwithupdatepip)')
-    print('#inputfile [path] [mode(without_newline,without_space,without_all)]读取文件进入缓冲区')
-    print('#$ 输出缓冲区($表示缓冲区),#$=xxx 进行手动赋值，仅识别为字符串')
-    print('#search [modules name] 搜索当前名称下能匹配的模块')
-    print('#net up(update) [-cover] 不覆盖的更新,带选项为覆盖 | net upmain [-cover](更新主程序) | net uptools [-cover](更新模块)')
-    print('#get [module_path]来单独下载某个模块,#update [module/module path] 单独更新某个模块(可自动补全),module path可从./version_list中查看')
+
 #show something
 def show(argv,tool_list):
     global version_dict
@@ -286,56 +227,6 @@ def lib(argv):
         os.system(pypath+' .\\install_module.py withupdatepip')
     else:
         print('>>>Illegal instructions<<<')
-
-#读取文件到buffer
-filereadmode = {
-    "none":lambda s:s,
-    "without_newline":lambda s:s.replace('\n','').replace('\r',''),
-    "without_space":lambda s:s.replace(' ',''),
-    "without_all":lambda s:s.replace('\n','').replace('\r','').replace('\n','').replace(' ','')
-}
-buffer=''
-def inputfile(path_mode):
-    arg=path_mode.split(' ')
-    path=arg[0]
-    mode=''
-    if path=='':
-        print('>>>no input path<<<')
-        return
-    global buffer
-    if len(arg)>2:
-        print('>>>too more args<<<')
-        return
-    elif len(arg)==2:
-        mode=arg[1]
-    try:
-        f=open(path,'r',encoding='UTF-8')
-        if mode in filereadmode:
-            buffer=filereadmode[mode](f.read())
-        else:
-            buffer=f.read()
-    except:
-        print('>>>a except in inputfile()<<<')
-        pass
-    
-#执行模式
-def exec_mode():
-    #exec('global buffer')
-    while True:
-        data=input('exec>')
-        if data=='exit()':
-            return
-        elif data=='':
-            continue
-        else:
-            if data.find('=')==-1 or data.find('==')!=-1:
-                data='print('+data+')'
-                pass
-            try:
-                exec(data.replace('$','buffer'))
-            except Exception as ex:
-                print('>>>Illegal code<<<')
-            
 
 #检查文件是否完全
 def check_file():

@@ -2,6 +2,7 @@
 import os
 import shutil
 import sys
+import time
 path=os.path.abspath('.')
 if 'tools' in path:#这里是为了便于开发调试
     path=path.split('tools',maxsplit=1)[0]+'Library\\utils'
@@ -45,24 +46,24 @@ class ext_downloader:
     def download_ext(self):
         num=len(self._download_list)
         down_num=0
-        bar=Pbar(speed=60,bar_fill='#',bar_moving='<=-=>',move_mode='lr')
+        bar=Pbar(speed=30,bar_fill='#',bar_moving='<=-=>',move_mode='lr')
         bar.start_bar()
         bar.set_rate(None,'checking extra lib...')
         for s in self._download_list:
             if os.path.exists(s['filepath']):
                 down_num+=1
-                for i in range(int(100/num*down_num)):
-                    bar.set_speed((100-i)//3+60)
-                    bar.set_rate(i,'checking extra lib...')
+                #bar.set_speed((100-i)//3+60)
+                bar.set_rate(int(100/num*down_num),'checking extra lib...')
                 continue
-            print('\nwarnning:leak extra lib...downloading'+' '*70)
+            bar.print('warnning:leak extra lib...downloading')
             bar.set_rate(None,'downloading...')
             
             self._call_downloader(self._get_downloader(s['downloader_name']))
             down_num+=1
-            for i in range(int(100/num*down_num)):
-                bar.set_rate(i,'checking extra lib...')
+
+            bar.set_rate(int(100/num*down_num),'checking extra lib...')
             self._move_file(s)
-            print('\ninfo:success download extra lib '+s['file_name']+' '*70)
+            bar.print('info:success download extra lib '+s['file_name'])
         bar.set_rate(100,'extar lib check pass')
-        bar.end_bar()
+        bar.end_bar(True)
+        

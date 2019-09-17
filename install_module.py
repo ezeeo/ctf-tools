@@ -6,44 +6,16 @@ try:
 except:
     print('error in install : must have module pip')
     exit()
-from pip._internal.utils.misc import get_installed_distributions
+
 from subprocess import call
 from time import sleep
 
 from Library.utils.pbar import Pbar
+from Library.utils.start_py_env import read_pyenv
+from Library.utils.file_scanner import scan_files
 
-version='1.3'
+version='1.4'
 pypath='python'
-
-def get_pyenv():
-    global pypath
-    if not os.path.exists('pytools.bat'):
-        print('warning:start script pytools.bat not exists')
-    else:       
-        f=open('pytools.bat', 'r',encoding='UTF-8')
-        for line in f:
-            if line[:16]=='set python_path=' and line.strip()!='set python_path=""':
-                pypath=line[17:-2]
-                break
-        f.close()
-
-
-
-def scan_files(directory,prefix=None,postfix=None):
-    files_list=[]
-    
-    for root, sub_dirs, files in os.walk(directory):
-        for special_file in files:
-            if postfix:
-                if special_file.endswith(postfix):
-                    files_list.append(os.path.join(root,special_file))
-            elif prefix:
-                if special_file.startswith(prefix):
-                    files_list.append(os.path.join(root,special_file))
-            else:
-                files_list.append(os.path.join(root,special_file))
-                          
-    return files_list
 
 
 def scan():#扫描存在的文件
@@ -67,6 +39,7 @@ def requisite_pip_module():#请求安装的
     return list(set(result))
 
 def should_install_modules(module_list):#需要安装的
+    from pip._internal.utils.misc import get_installed_distributions
     mo=get_installed_distributions()
     modules=[]
     for i in mo:
@@ -132,34 +105,34 @@ def withupdatepip():
 
 
 def bar_status():
-    bar=Pbar(speed=60,bar_fill='#',bar_moving='<=-=>',move_mode='lr')
+    bar=Pbar(speed=30,bar_fill='#',bar_moving='<=-=>',move_mode='lr',smooth=False,allow_skip_frame=True)
     bar.start_bar()
-    bar.set_rate(None,'checking lib...')
+    bar.set_rate(None,'get pip list...')
 
     li=requisite_pip_module()
     all_num=len(li)
     li=should_install_modules(li)
     should_down_num=len(li)
 
-    now_num=1
-    for i in range(int(100/all_num*(all_num-should_down_num))):
-        if i>100/all_num*now_num:now_num+=1
+    for i in range(1,all_num+1):
 
-        bar.set_speed((100-i)//3+60)
-        bar.set_rate(i,'checking lib...{}/{}'.format(now_num,all_num+1))
+        #bar.set_speed((100-i)//3+60)
+        bar.set_rate(int(i/all_num*100),'checking lib...{}/{}'.format(i,all_num+1))
 
     if len(li)==0:
         bar.set_rate(100,'lib check pass')
-        bar.end_bar()
+        bar.end_bar(True)
     else:
         bar.set_rate(None,'lib check fail')
-        bar.end_bar()
+        bar.end_bar(True)
         print('[-]warn:should install num '+str(len(li)))
 
 
 
 if __name__ =='__main__':
-    get_pyenv()
+    pypath=read_pyenv()
+    if pypath==False:pypath='python'
+    
     if len(sys.argv)==1:
         default(False)
     elif sys.argv[1]=='version':
