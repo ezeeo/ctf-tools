@@ -11,7 +11,7 @@ from Library.utils.start_py_env import read_pyenv,write_pyenv
 from Library.utils.network_usage import check_use_net
 from Library.utils.help_info import help_info
 
-version='0.73'
+version='0.74'
 pypath='python'
 
 def init_pyenv():
