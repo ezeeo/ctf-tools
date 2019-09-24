@@ -3,6 +3,16 @@ import os
 import configparser
 import subprocess
 import json
+from matcher import Matcher
+path=os.path.abspath('.')
+if 'tools' in path:
+    path=path.split('tools',maxsplit=1)[0]+'Library\\utils'
+else:
+    path=path+'\\Library\\utils'
+if not path in sys.path:
+    sys.path.append(path)
+
+from pbar import Pbar
 
 class PY_ENV_CL:
     '''checker and loader'''
@@ -10,31 +20,39 @@ class PY_ENV_CL:
         if ver not in (2,3,'auto'):
             raise Exception('版本错误')
         self._py_ver=ver
-        self._lib_path=lib_path
-        ex=[False,False]
-        ex[0]=self._check_path_exists()
-        self._standard_path()
-        ex[1]=self._check_path_exists()
-        if sum(ex)==2:
-            pass
-        elif sum(ex)==0:
-            raise Exception('路径不存在')
-        elif ex[0]==True and ex[1]==False:
-            #raise Exception('debug')
+        if lib_path!=None:
             self._lib_path=lib_path
-        self._clean_to_dir()
-        if not self._check_path_exists():raise Exception('debug')
+            if os.path.exists(self._lib_path) and os.path.isfile(self._lib_path):
+                self._mode='file'
+            else:
+                self._mode='dir'
+                ex=[False,False]
+                ex[0]=self._check_path_exists()
+                self._standard_path()
+                ex[1]=self._check_path_exists()
+                if sum(ex)==2:
+                    pass
+                elif sum(ex)==0:
+                    raise Exception('路径不存在')
+                elif ex[0]==True and ex[1]==False:
+                    #raise Exception('debug')
+                    self._lib_path=lib_path
+                self._clean_to_dir()
+            if not self._check_path_exists():raise Exception('debug')
         self._check_py_ver()
         self._conf_path='./Library/utils/env_conf.ini'
-        #self._conf_path='G:/python/tool_manager/Library/utils/env_conf.ini'
+        #self._conf_path='D:/ctf-tool/Library/utils/env_conf.ini'
         self._config=self._read_default_conf()
-        self._write_conf()
         self._check_conf()
 
 
 
     def get_pyenv(self):
-        return self._config.get("python", "python{}_path".format(self._py_ver))
+        e=self._config.get("python", "python{}_path".format(self._py_ver)).strip()
+        if ' ' in e:
+            return '"'+e+'"'
+        else:
+            return e
 
     def get_pyver(self):
         return self._py_ver
@@ -85,6 +103,25 @@ class PY_ENV_CL:
 
     def _check_input_path(self,path,mode='输入'):
         '''检查输入的python路径是否正常'''
+        #检查环境变量
+        for p in os.environ['Path'].split(';'):
+            if 'python{}'.format(self._py_ver) in p or 'Python{}'.format(self._py_ver) in p:
+                return True
+        #检查可执行性
+        p = subprocess.Popen([path,'--version'], shell=True,stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        data=[]
+        while True:
+            d=p.stdout.readline()
+            if not d:
+                break
+            data.append(d)
+        
+        p.stdout.close()
+        p.wait()
+        #os.waitpid(p.pid, 0)
+        if b'\n'.join(data).startswith('Python {}'.format(self._py_ver).encode('utf-8')):
+            return True
+        #检查文件
         abs_path=os.path.abspath(path)
         if os.path.exists(path) or os.path.exists(abs_path):
             if os.path.isfile(path) or os.path.isfile(abs_path):
@@ -98,6 +135,7 @@ class PY_ENV_CL:
                     return False
             return True
         else:
+            
             return False
 
 
@@ -121,11 +159,17 @@ class PY_ENV_CL:
         with open(filename,'r',encoding='utf-8') as f:
             data=f.read()
 
-        if 'print ' in data or 'exec ' in data or 'xrange' in data or 'raw_input' in data:
+        if 'print "' in data or "print '" in data or 'exec ' in data or 'xrange' in data or 'raw_input' in data:
             return 2
-        elif 'print(' in data or 'exec(' in data:
+        elif 'print(' in data or 'print (' in data or 'exec(' in data:
             return 3
         else:
+            M=Matcher('*except *,*:*',tuple())
+            if True in (M.is_match(l) for l in data.split('\n')):
+                return 2
+            M.set_substr('*except * as *:*')
+            if True in (M.is_match(l) for l in data.split('\n')):
+                return 3
             return False
 
 
@@ -171,7 +215,10 @@ class PY_ENV_CL:
 
     def _scan_py(self):
         '''扫描存在的文件'''
-        return self._scan_files(self._lib_path,postfix=".py")
+        if self._mode=='dir':
+            return self._scan_files(self._lib_path,postfix=".py")
+        else:
+            return [self._lib_path]
 
 
     def _check_conf_exists(self):
@@ -219,16 +266,34 @@ class PY_PIP_CI:
     def __init__(self,pyenv):
         self._pyenv=pyenv
         self._pip_list=self._get_py_piplist()
+        #self._bat_path='D:/ctf-tool/Library/utils/tmp.bat'
 
 
     def ensure(self,pipname):
-        '''保证指定的pip已经安装'''
-        if pipname not in self._pip_list:
-            fd=self._install(pipname)
-            if fd==False:
-                print('[!]错误:pip软件包'+pipname+'安装失败')
-                exit(1)
-
+        '''保证指定的pip已经安装,字符串或列表'''
+        if isinstance(pipname,str):
+            if pipname not in self._pip_list:
+                fd=self._install(pipname)
+                if fd==False:
+                    print('[!]错误:pip软件包'+pipname+'安装失败')
+                    exit(1)
+        elif isinstance(pipname,tuple) or isinstance(pipname,list):
+            #开进度条
+            bar=Pbar(show_percent_num=False,smooth=True,allow_skip_frame=False,vsync=True)
+            pnum=len(pipname)+1
+            for i,p in enumerate(pipname):
+                bar.set_rate(int(i+1//pnum*100),'check '+p+'...')
+                if p not in self._pip_list:
+                    fd=self._install(p)
+                    if fd==False:
+                        bar.print('[!]错误:pip软件包'+pipname+'安装失败')
+                        bar.clear(True)
+                        exit(1)
+            bar.set_rate(100,'all done')
+            bar.clear(True)
+        else:
+            print('[!]错误:不支持的参数类型')
+            exit(1)
 
 
     def _install(self,pipname):
@@ -270,6 +335,7 @@ set PYTHONIOENCODING=UTF-8
 
 
 if __name__ == "__main__":
-    piplist=PY_PIP_CI('c:/Python27/python.exe')
-    print(piplist._pip_list)
-
+    #piplist=PY_PIP_CI('c:/Python27/python.exe')
+    #print(piplist._pip_list)
+    print(PY_ENV_CL(None,3).get_pyenv())
+    print(PY_ENV_CL(None,2).get_pyenv())

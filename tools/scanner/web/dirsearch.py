@@ -5,7 +5,17 @@ import os
 import shutil
 import datetime
 
-pyenv='python'
+path=os.path.abspath('.')
+if 'tools' in path.replace('\\','/').split('/'):
+    path=path.split('tools',maxsplit=1)[0]+'Library\\utils'
+else:
+    path=path+'\\Library\\utils'
+if not path in sys.path:
+    sys.path.append(path)
+
+from py_env_util import PY_ENV_CL
+
+pyenv=PY_ENV_CL(None,3).get_pyenv()
 dirsearch='./Library/dirsearch-master/dirsearch.py'
 dir_path='./Library/dirsearch-master/'
 

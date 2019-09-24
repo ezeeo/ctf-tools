@@ -1,10 +1,10 @@
 #coding=utf-8
-#version 1.2
+#version 1.3
 import os
 import hashlib
 import sys
 path=os.path.abspath('.')
-if 'tools' in path:#这里是为了便于开发调试
+if 'tools' in path.replace('\\','/').split('/'):#这里是为了便于开发调试
     path=path.split('tools',maxsplit=1)[0]+'Library\\utils'
 else:
     path=path+'\\Library\\utils'
@@ -54,24 +54,30 @@ def GetFileMd5(filename):
     bar.clear()
     return myhash.hexdigest()
 
-if len(sys.argv)==2:
-    m=GetFileMd5(sys.argv[1])
-    if m==False:
-        pass
+def get_str_md5(s):
+    myhash = hashlib.md5()
+    myhash.update(s.encode(encoding='utf-8'))
+    return myhash.hexdigest()
+
+def get_md5(s):
+    if os.path.exists(s):
+        m=GetFileMd5(s)
+        if m==False:
+            pass
+        else:
+            print(m)
     else:
-        print(m)
-    exit()
+        print(get_str_md5(s))
 
 
 if __name__ == "__main__":
+    if len(sys.argv)==2:
+        get_md5(sys.argv[1])
+        exit()
     while True:
         data=input('md5>')
         if data=='exit()':
             exit()
         elif data=='':
             continue
-        m=GetFileMd5(data)
-        if m==False:
-            continue
-        else:
-            print(m)
+        get_md5(data)

@@ -1,18 +1,29 @@
 #encoding:utf-8
 #version 1.2
+#import paramiko
 
 import os
 import sys
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
 
+path=os.path.abspath('.')
+if 'tools' in path.replace('\\','/').split('/'):
+    path=path.split('tools',maxsplit=1)[0]+'Library\\utils'
+else:
+    path=path+'\\Library\\utils'
+if not path in sys.path:
+    sys.path.append(path)
+from py_env_util import PY_ENV_CL,PY_PIP_CI
+
+python2_env=PY_ENV_CL('cves',2).get_pyenv()
+python3_env=PY_ENV_CL('cves',3).get_pyenv()
+PY_PIP_CI(python2_env).ensure('paramiko')
 
 #base='C:\\Tools\\pytools'
 base='.'
 cvebase = base+'/Library/cves/'
 
-python2_env='python'
-python3_env='python'
 guess_list=[]#cache
 
 
@@ -103,7 +114,7 @@ def match(all_cve,name):
 
 
 if len(sys.argv)==2:
-    get_py_env()
+    #get_py_env()
     allcve=scan()
     file_name=match(allcve,sys.argv[1])
     if file_name==False:
@@ -122,7 +133,7 @@ if len(sys.argv)==2:
 
 if __name__ == "__main__":
     print('本模块用于调用cve 的poc')
-    get_py_env()
+    #get_py_env()
     allcve=scan()
     print('[+]get',len(allcve),'poc')
     for i in allcve:print('[+]'+os.path.split(i)[1])
@@ -137,7 +148,9 @@ if __name__ == "__main__":
         if file_name==False:
             print('[!]匹配失败')
             continue
-        now_env=eval('python'+str(check_py23(file_name))+'_env')
+        
+        now_env=PY_ENV_CL(file_name).get_pyenv()
+        print('now env:',now_env)
         while 1:
             print(os.path.basename(file_name),'-> ',end='')
             args=input('input args:')

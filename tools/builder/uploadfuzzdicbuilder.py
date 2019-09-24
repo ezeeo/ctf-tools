@@ -2,25 +2,24 @@
 #version 1.0
 import sys
 import os
+path=os.path.abspath('.')
+if 'tools' in path.replace('\\','/').split('/'):#这里是为了便于开发调试
+    path=path.split('tools',maxsplit=1)[0]+'Library\\utils'
+else:
+    path=path+'\\Library\\utils'
+if not path in sys.path:
+    sys.path.append(path)
+from py_env_util import PY_ENV_CL,PY_PIP_CI
+pyenv=PY_ENV_CL('upload-fuzz-dic-builder').get_pyenv()
 
-def get_py_env():
-    pyenv='python'
-    if os.path.exists('py_env.ini'):
-        print('find py_env.ini')
-        f=open('py_env.ini', 'r',encoding='UTF-8')
-        pyenv=f.readline()
-        pyenv="'"+pyenv+"'"
-        f.close()
-    return pyenv
-pyenv=get_py_env()
 
 if len(sys.argv)>1:
     arg=''
     for i in range(1,len(sys.argv)):
         arg=arg+' '+sys.argv[i]
 
-    print(pyenv+' ./Library/upload-fuzz-dic-builder/upload-fuzz-dic-builder.py'+arg)
-    #os.system(pyenv+' ./Library/upload-fuzz-dic-builder/upload-fuzz-dic-builder.py'+arg)
+    #print(pyenv+' ./Library/upload-fuzz-dic-builder/upload-fuzz-dic-builder.py'+arg)
+    os.system(pyenv+' ./Library/upload-fuzz-dic-builder/upload-fuzz-dic-builder.py'+arg)
     exit()
 
 notice='''

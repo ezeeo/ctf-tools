@@ -8,11 +8,23 @@
 import sys
 import os
 import shutil
+path=os.path.abspath('.')
+if 'tools' in path.replace('\\','/').split('/'):
+    path=path.split('tools',maxsplit=1)[0]+'Library\\utils'
+else:
+    path=path+'\\Library\\utils'
+if not path in sys.path:
+    sys.path.append(path)
+
+from py_env_util import PY_ENV_CL
+
+pyenv=PY_ENV_CL(None,3).get_pyenv()
+
 
 weblogicscan='./Library/WeblogicScan/WeblogicScan.py'
 
 def scan(ip,port,use_https):
-    fd=os.system('python '+weblogicscan+' '+ip+' '+port+' '+use_https)
+    fd=os.system(pyenv+' '+weblogicscan+' '+ip+' '+port+' '+use_https)
     move_log()
     return fd
 

@@ -1,11 +1,11 @@
 #coding=utf-8
 #import requests
-#version 1.1
+#version 1.2
 
 import requests
 import os,sys
 path=os.path.abspath('.')
-if 'tools' in path:#这里是为了便于开发调试
+if 'tools' in path.replace('\\','/').split('/'):#这里是为了便于开发调试
     path=path.split('tools',maxsplit=1)[0]+'Library\\utils'
 else:
     path=path+'\\Library\\utils'
@@ -141,9 +141,13 @@ def parse_n_for_factordb(n,raw):
         bar.set_rate(70,None)
 
         if len(ltext[0])>4:
-            bar.set_rate(0,'status code lenth too long')
-            bar.print('format error:status code lenth too long')
-            return False
+            if '*' in ltext[0]:
+                #处理font color
+                ltext[0]=ltext[0].split(' ')[0].strip()+'*'
+            else:
+                bar.set_rate(0,'status code lenth too long')
+                bar.print('format error:status code lenth too long')
+                return False
         if ltext[1].find('<a')==-1:
             bar.set_rate(0,'digits parse error')
             bar.print('format error:digits parse error')

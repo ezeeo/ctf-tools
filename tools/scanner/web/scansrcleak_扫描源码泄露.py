@@ -2,6 +2,18 @@
 #version 1.0
 import sys
 import os
+path=os.path.abspath('.')
+if 'tools' in path.replace('\\','/').split('/'):
+    path=path.split('tools',maxsplit=1)[0]+'Library\\utils'
+else:
+    path=path+'\\Library\\utils'
+if not path in sys.path:
+    sys.path.append(path)
+
+from py_env_util import PY_ENV_CL
+
+pyenv=PY_ENV_CL(None,3).get_pyenv()
+
 
 #base='G:\\python\\tool_manager'
 base='.'
@@ -156,4 +168,4 @@ if __name__ == "__main__":
         arg=' u='+instr
     else:
         arg=' l=temp.txt'
-    os.system('python '+clistart+arg)
+    os.system(pyenv+' '+clistart+arg)

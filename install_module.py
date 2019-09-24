@@ -105,7 +105,7 @@ def withupdatepip():
 
 
 def bar_status():
-    bar=Pbar(speed=30,bar_fill='#',bar_moving='<=-=>',move_mode='lr',smooth=False,allow_skip_frame=True)
+    bar=Pbar(speed=30,bar_fill='#',bar_moving='<=-=>',move_mode='lr',smooth=True,allow_skip_frame=True)
     bar.start_bar()
     bar.set_rate(None,'get pip list...')
 
@@ -121,11 +121,10 @@ def bar_status():
 
     if len(li)==0:
         bar.set_rate(100,'lib check pass')
-        bar.end_bar(True)
     else:
         bar.set_rate(None,'lib check fail')
-        bar.end_bar(True)
-        print('[-]warn:should install num '+str(len(li)))
+        bar.print('[-]warn:should install num '+str(len(li)))
+    bar.clear(True)
 
 
 

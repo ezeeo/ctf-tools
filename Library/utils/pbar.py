@@ -3,7 +3,7 @@ import os
 import threading
 from queue import Queue
 import time
-#进度条v1.0 powered by ezeeo|github:https://github.com/ezeeo/ctf-tools qq:1067530461
+#进度条v1.2 powered by ezeeo|github:https://github.com/ezeeo/ctf-tools qq:1067530461
 
 #初始化时可自定义部分如下(均具有默认值)
 #1.可自定义移动部件(非进度部分)。例如  |####            <=-=>                  |   <=-=>为移动部件,####为进度
@@ -15,6 +15,8 @@ import time
 #7.可自定义可移动部件的移动方式ll(从左到右),rr(从右到左),lr(左右来回弹)(默认)
 #8.可自定义是否启用平滑进度模式(即目标进度与当前进度差距大于一格进度的时候,平滑模式会逐格进行增减,不启用则进度会跳变)
 #9.可自定义是否启用允许跳帧(注意:所有用户请求的帧都不会跳过,跳帧仅仅适用于平滑模式生成的帧)
+#10.可自定义是否启用垂直同步(显示事件处理与显示同步)(要使用平滑模式必须启用垂直同步)
+#11.可自定义是否展示百分比的数字show_percent_num
 
 #运行时可更改以下配置
 #进度条刷新速度,可移动部件(非进度部分),进度部分的填充字符,可移动部件的移动方式
@@ -46,7 +48,7 @@ import time
 
 class Pbar:
     '''提供进度条功能，可设置宽度，提示信息，帧率填充等等'''
-    def __init__(self,speed=15,info_speed=1,bar_len='Auto',info_len='Auto',bar_fill='#',bar_moving='<=-=>',move_mode='lr',smooth=True,allow_skip_frame=True):
+    def __init__(self,speed=15,info_speed=1,bar_len='Auto',info_len='Auto',bar_fill='#',bar_moving='<=-=>',move_mode='lr',show_percent_num=False,smooth=True,allow_skip_frame=True,vsync=True):
         '''smooth即平滑模式，设定一个进度向另一个进度切换时是否平滑，allow_skip_frame标志是否允许跳过平滑帧'''
         self._fps=speed
         self._info_fps=info_speed#info的fps
@@ -55,9 +57,11 @@ class Pbar:
         self._bar_fill=bar_fill
         self._bar_moving=bar_moving
         self._move_mode=move_mode
+        self._show_percent_num=show_percent_num
 
         self._smooth=smooth
         self._allow_skip_frame=allow_skip_frame
+        self._vsync=vsync
 
         self._terminal_size=os.get_terminal_size()
 
@@ -78,15 +82,17 @@ class Pbar:
         self._info_next_direction=0
         self._init_direction()
 
-        self._now_move_info_interval=0# 当它等于int(self._fps/self._info_fps)时应该移动#2fps(多少frame移动一次)
+        self._now_move_info_interval=0# 当它等于int(self._fps/self._info_fps)时应该移动info#2fps(多少frame移动一次)
 
+        self._bar_template=None#进度条模板
         self._set_show_template()
 
-        self._now_fill_num=0#进度条值
+        self._now_fill_num=0#进度条值(0-100)
         self._now_str_info=''#显示的信息
         self._tmp_frame=''#缓存帧
 
-        self._last_render_cache_time=0#上次计算用时
+        self._last_event_time=0#上次处理event用时
+        self._last_render_cache_time=0#上次计算(刷新到缓存)用时
         self._last_to_screen_time=0#上次输出到屏幕用时
         self._frame_sleep=1/self._fps#每帧间隔
 
@@ -160,6 +166,16 @@ class Pbar:
             if self._info_fps<=0 or self._info_fps>self._fps:
                 self._log.append('[!]error:0<=info_speed<speed')
                 return False
+        if not isinstance(self._vsync,bool):
+            self._log.append('[!]error:vsync必须是bool')
+            return False
+        else:
+            if self._vsync==False and self._smooth==True:
+                self._log.append('[!]error:smooth开启依赖于vsync开启')
+                return False
+        if not isinstance(self._show_percent_num,bool):
+            self._log.append('[!]error:show_percent_num必须是bool')
+            return False
         return True
 
 
@@ -231,6 +247,11 @@ class Pbar:
                 self._bar_template[i]=info[info_start_index+num]
                 num+=1
 
+    def _render_persent_num(self,fill_num):
+        i=self._bar_len//2-1
+        s=str(fill_num)+'%'
+        for ii,ss in enumerate(s):
+            self._bar_template[i+ii]=ss
 
 
     def _cal_next_frame(self,frame_mode=None,fill_num=None,info=None):
@@ -241,7 +262,9 @@ class Pbar:
         #elif frame_mode==False:self._now_fill_num=fill_num
 
         if info==None:info=self._now_str_info
-        else:self._now_str_info=info
+        else:
+            self._now_str_info=info
+            self._info_position=0
 
         #计算下一个position
         self._bar_position=self._bar_position+self._bar_next_direction
@@ -275,6 +298,9 @@ class Pbar:
 
         self._render_bar_position(fill_num,self._bar_position)
         self._render_info_position(info,self._info_position)
+
+        if self._show_percent_num:
+            self._render_persent_num(fill_num)
 
         self._tmp_frame='\r'+''.join(self._bar_template)
 
@@ -329,7 +355,7 @@ class Pbar:
         for i in range(self._now_fill_num+skip,target_fill,skip):
             if target_event[0]=='a' and add_info:#需要添加info
                 self._events.put(('a',True,i,target_event[3]))
-                add_info=True
+                add_info=False
             elif target_event[0]=='a' and not add_info:
                 self._events.put(('r',True,i))
             else:
@@ -348,12 +374,12 @@ class Pbar:
                 s_time=time.time()
                 d=None#当前应处理的请求
                 #处理用户渲染请求
-                if not self._user_render_events.empty():
+                while not self._user_render_events.empty():
                     dd=self._user_render_events.get()
 
-                    if not self._user_render_events.empty():#还有下一个渲染请求，跳帧
+                    if not self._user_render_events.empty() or self._events.qsize()>100:#还有下一个渲染请求或者未处理事件>100，跳帧
                         #允许跳过
-                        while not self._events.empty() and self._allow_skip_frame:
+                        while not self._events.empty() and self._allow_skip_frame :
 
                             d=self._events.get()
                             if d[0] in ('a','r','i') and d[1]==True:pass
@@ -365,8 +391,21 @@ class Pbar:
                         if dd[0] in ('r','a'):
                             self._now_fill_num=dd[2]
                         self._events.put(dd)
+                    if self._vsync:
+                        break
+                    else:#超时判断
+                        if self._frame_sleep-self._last_render_cache_time-self._last_to_screen_time<=time.time()-s_time:break
 
+                #非垂直同步的跳帧
+                if not self._vsync:
+                    while not self._events.empty() and (d==None or d[0] in ('a','r','i')):
+                        d=self._events.get()
+                        if d[0] in ('a','r','i'):pass
+                        else:break
 
+                
+                c_time=time.time()
+                self._last_event_time=c_time-s_time
                 #处理事件
                 if d!=None or not self._events.empty():
                     if d==None:d=self._events.get()
@@ -388,9 +427,9 @@ class Pbar:
                     self._cal_next_frame()
 
                 e_time=time.time()
-                self._last_render_cache_time=e_time-s_time
+                self._last_render_cache_time=e_time-c_time
                 #计算应睡眠事件
-                sleep_time=self._frame_sleep-self._last_render_cache_time-self._last_to_screen_time
+                sleep_time=self._frame_sleep-self._last_render_cache_time-self._last_to_screen_time-self._last_event_time
                 if sleep_time>0:
                     time.sleep(sleep_time)
 
@@ -431,7 +470,7 @@ class Pbar:
             self._user_render_events.put(('i',False,info))
 
     def end_bar(self,waiting,newline=True,show_log=False):
-        '''结束进度条'''
+        '''结束进度条show_log必定newline'''
         if waiting:
             while not self._user_render_events.empty():time.sleep(0.1)
 
@@ -492,7 +531,7 @@ class Pbar:
         self._events.put(('p',s))
 
     def clear(self,waiting=False):
-        '''注意不建议事先调用end,除非调用endbar时候参数newline=False'''
+        '''结束并清除进度条。注意不建议事先调用end,除非调用endbar时候参数newline=False'''
         if self._event_thread.isAlive():
             self.end_bar(waiting,False)
         print('\r'+' '*(self._bar_len+self._info_len+3),end='')
@@ -502,15 +541,24 @@ class Pbar:
 if __name__ == "__main__":
 
 
-    bar=Pbar(speed=6,bar_len=100,info_len=30,bar_fill='#',bar_moving='<=-=>',move_mode='lr',smooth=False,allow_skip_frame=True)
+    bar=Pbar(speed=6,bar_len=100,info_len=30,bar_fill='#',bar_moving='<=-=>',move_mode='lr',show_percent_num=True,smooth=True,allow_skip_frame=True,vsync=True)
     bar.start_bar()
-
-    rate=0
-
-    import random,string
-    r=random.randint(0,100)
-
     fills='0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~'
+    bar.set_rate(0,fills)
+    # while 1:
+    #     for i in range(101):
+    #         bar.set_rate(i)
+    #         time.sleep(0.0005)
+    #     time.sleep(0.05)
+
+    # import random,string
+    # r=random.randint(0,100)
+    while 1:
+        time.sleep(2)
+        bar.set_rate(100)
+        time.sleep(2)
+        bar.set_rate(0)
+    
 
 
     bar.set_rate(10,'1231235skjdfbksdgkuasgfkjasgfk')
@@ -519,10 +567,13 @@ if __name__ == "__main__":
     bar.set_rate(20,'234agsvkjgavskjgas')
     #time.sleep(1)
     bar.set_rate(60,'234askjbcaskjva')
-    time.sleep(1)
+    #time.sleep(5)
+    #bar.print('endbar...')
     bar.set_rate(100,'1234567890abcdefghijklmnopqrstuvwxyz')
-    bar.set_rate(0,'fills')
-    bar.end_bar(True,show_log=True)
+    bar.set_rate(100,fills)
+    #bar.end_bar(True,False)
+    #bar.clear()
+    # bar.end_bar(True,show_log=True)
     #bar.clear(True)
     #print('end')
 

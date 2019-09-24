@@ -46,7 +46,7 @@ class ext_downloader:
     def download_ext(self):
         num=len(self._download_list)
         down_num=0
-        bar=Pbar(speed=30,bar_fill='#',bar_moving='<=-=>',move_mode='lr')
+        bar=Pbar(speed=30,bar_fill='#',bar_moving='>>>>>',move_mode='ll')
         bar.start_bar()
         bar.set_rate(None,'checking extra lib...')
         for s in self._download_list:
@@ -65,5 +65,5 @@ class ext_downloader:
             self._move_file(s)
             bar.print('info:success download extra lib '+s['file_name'])
         bar.set_rate(100,'extar lib check pass')
-        bar.end_bar(True)
+        bar.clear(True)
         

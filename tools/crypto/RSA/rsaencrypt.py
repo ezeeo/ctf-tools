@@ -2,7 +2,11 @@
 #version 1.0
 import sys
 import os
-path=os.path.abspath('.')+'\\Library\\RSAUtil'
+path=os.path.abspath('.')
+if 'tools' in path.replace('\\','/').split('/'):
+    path=path.split('tools',maxsplit=1)[0]+'Library\\RSAUtil'
+else:
+    path=path+'\\Library\\RSAUtil'
 if not path in sys.path:
     sys.path.append(path)
 

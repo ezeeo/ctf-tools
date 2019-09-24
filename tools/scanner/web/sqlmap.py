@@ -2,31 +2,40 @@
 #version 1.1
 import sys
 import os
-pyenv='python'
+path=os.path.abspath('.')
+if 'tools' in path.replace('\\','/').split('/'):
+    path=path.split('tools',maxsplit=1)[0]+'Library\\utils'
+else:
+    path=path+'\\Library\\utils'
+if not path in sys.path:
+    sys.path.append(path)
+
+from py_env_util import PY_ENV_CL
+
+pyenv=PY_ENV_CL(None,2).get_pyenv()
+
 sqlmap_config='./Library/sqlmap/config.ini'
 
 def read_config():
     global sqlmap_config
     if os.path.exists(sqlmap_config):
         f=open(sqlmap_config,'r',encoding='utf-8')
-        config=f.read().strip().split('\n')
-        if len(config)==2:
-            return config
+        config=f.read().strip().split('\n')[0]
+        return config
     return None
 
 
 def check_config(config):
-    if os.path.exists(config[1]):return True
+    if os.path.exists(config):return True
     return False
 
 def input_config():
-    env=input('input python env:')
     sqlmappath=input('input sqlmap path:')
-    return (env,sqlmappath)
+    return sqlmappath
 
-def set_config(env,sqlmappath):
+def set_config(sqlmappath):
     f=open(sqlmap_config,'w',encoding='utf-8')
-    f.write(env+'\n'+sqlmappath)
+    f.write(sqlmappath)
     f.close()
     
 
@@ -41,8 +50,7 @@ if __name__ == "__main__":
             if not check_config(fd):
                 print('[-]config data error')
                 exit(1)
-            pyenv=fd[0]
-            sqlmap=fd[1]
+            sqlmap=fd
             args=' '.join(sys.argv[1:])
             os.system(pyenv+' '+sqlmap+' '+args)
             exit(0)
@@ -54,9 +62,8 @@ if __name__ == "__main__":
         if not check_config(fd):
             print('[-]config data error')
             exit(0)
-        set_config(fd[0],fd[1])
-        pyenv=fd[0]
-        sqlmap=fd[1]
+        set_config(fd)
+        sqlmap=fd
     else:
         if not check_config(fd):
             print('[-]config data error')
@@ -64,9 +71,8 @@ if __name__ == "__main__":
             if not check_config(fd):
                 print('[-]config data error')
                 exit(0)
-            set_config(fd[0],fd[1])
-        pyenv=fd[0]
-        sqlmap=fd[1]
+            set_config(fd)
+        sqlmap=fd
 
     print('[+]pyenv :',pyenv)
     print('[+]sqlmap:',sqlmap)

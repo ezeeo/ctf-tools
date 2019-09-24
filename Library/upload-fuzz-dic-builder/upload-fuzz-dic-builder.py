@@ -285,7 +285,7 @@ if __name__ == '__main__':
 	num = len(all_parse_suffix)
 	for i in all_parse_suffix:
 		astr = '%s.%s' % (upload_file_name,i)
-		#print '[+] '+type(str)
+		#print('[+] '+type(str))
 		f.write(astr+'\n')
 	num += len(htaccess_suffix)
 	for i in htaccess_suffix:

