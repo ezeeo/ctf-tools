@@ -3,7 +3,7 @@
 #version 1.0
 import execjs
 import os
-path=os.path.abspath('.')+'\\Library\\jotherencode\\jother-1.0.rc.js'
+path=os.path.abspath('.')+'/Library/jotherencode/jother-1.0.rc.js'
 
 def get_js():
     f = open(path, encoding='utf-8') # 打开JS文件

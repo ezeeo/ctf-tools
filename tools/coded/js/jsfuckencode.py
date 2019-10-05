@@ -6,10 +6,10 @@ import os
 
 path=os.path.abspath('.')
 if 'tools' in path.replace('\\','/').split('/'):
-    path=path.split('tools',maxsplit=1)[0]+'Library\\pyjsfuck'
+    path=path.split('tools',maxsplit=1)[0]+'Library/pyjsfuck'
 else:
-    path=path+'\\Library\\pyjsfuck'
-if not path in sys.path:
+    path=path+'/Library/pyjsfuck'
+if not path in (p.replace('\\','/') for p in sys.path):
     sys.path.append(path)
 
 from pyjsfuck import JSFuck

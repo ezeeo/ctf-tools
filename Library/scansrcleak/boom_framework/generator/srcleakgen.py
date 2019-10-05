@@ -1,6 +1,6 @@
 def gen():
     print('[+]load generator...',end='')
-    f=open('G:/python/tool_manager/Library/scansrcleak/boom_framework/generator/temp','r',encoding='utf-8')
+    f=open('./Library/scansrcleak/boom_framework/generator/temp','r',encoding='utf-8')
     passw=f.read()
     f.close()
     passw=set(passw.strip().split('\n'))

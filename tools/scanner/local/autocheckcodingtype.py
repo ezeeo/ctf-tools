@@ -5,10 +5,10 @@ import sys
 import os
 path=os.path.abspath('.')
 if 'tools' in path.replace('\\','/').split('/'):
-    path=path.split('tools',maxsplit=1)[0]+'Library\\AutoCheckCodingType'
+    path=path.split('tools',maxsplit=1)[0]+'Library/AutoCheckCodingType'
 else:
-    path=path+'\\Library\\AutoCheckCodingType'
-if not path in sys.path:
+    path=path+'/Library/AutoCheckCodingType'
+if not path in (p.replace('\\','/') for p in sys.path):
     sys.path.append(path)
 
 

@@ -9,10 +9,10 @@ import sys
 import os
 path=os.path.abspath('.')
 if 'tools' in path.replace('\\','/').split('/'):#这里是为了便于开发调试
-    path=path.split('tools',maxsplit=1)[0]+'Library\\xxx(python class 所在文件夹)'
+    path=path.split('tools',maxsplit=1)[0]+'Library/xxx(python class 所在文件夹)'
 else:
-    path=path+'\\Library\\xxx(python class 所在文件夹)'
-if not path in sys.path:
+    path=path+'/Library/xxx(python class 所在文件夹)'
+if not path in (p.replace('\\','/') for p in sys.path):
     sys.path.append(path)
 
 6.添加的模块支不支持参数传入均可

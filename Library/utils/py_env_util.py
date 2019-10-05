@@ -5,11 +5,11 @@ import subprocess
 import json
 from matcher import Matcher
 path=os.path.abspath('.')
-if 'tools' in path:
-    path=path.split('tools',maxsplit=1)[0]+'Library\\utils'
+if 'tools' in path.replace('\\','/').split('/'):#这里是为了便于开发调试
+    path=path.split('tools',maxsplit=1)[0]+'Library/utils'
 else:
-    path=path+'\\Library\\utils'
-if not path in sys.path:
+    path=path+'/Library/utils'
+if not path in (p.replace('\\','/') for p in sys.path):
     sys.path.append(path)
 
 from pbar import Pbar
@@ -306,8 +306,9 @@ class PY_PIP_CI:
 
     def _get_py_piplist(self):
         '''获取当前python环境的pip列表'''
-        self._create_bat()
-        s=subprocess.Popen(['cmd','/C',".\\Library\\utils\\tmp.bat"],bufsize=0,stdout=subprocess.PIPE,universal_newlines=True)
+        #self._create_bat()
+        #s=subprocess.Popen(['cmd','/C',".\\Library\\utils\\tmp.bat"],bufsize=0,stdout=subprocess.PIPE,universal_newlines=True)
+        s=subprocess.Popen(['cmd','/C',"set PYTHONIOENCODING=UTF-8&&{} ./Library/utils/get_py_pip_list.py".format(self._pyenv)],bufsize=0,stdout=subprocess.PIPE,stdin=subprocess.PIPE,universal_newlines=True)
         result=''
         while True:
             nextline=s.stdout.readline().strip()
@@ -317,7 +318,7 @@ class PY_PIP_CI:
         result=result.split('|')[1]
         #print(result)
         j=json.loads(result.strip())
-        self._clean_bat()
+        #self._clean_bat()
         return j
 
 
@@ -335,7 +336,7 @@ set PYTHONIOENCODING=UTF-8
 
 
 if __name__ == "__main__":
-    #piplist=PY_PIP_CI('c:/Python27/python.exe')
-    #print(piplist._pip_list)
-    print(PY_ENV_CL(None,3).get_pyenv())
-    print(PY_ENV_CL(None,2).get_pyenv())
+    piplist=PY_PIP_CI('c:/Python27/python.exe')
+    print(piplist._pip_list)
+    #print(PY_ENV_CL(None,3).get_pyenv())
+    #print(PY_ENV_CL(None,2).get_pyenv())

@@ -5,10 +5,10 @@ import hashlib
 import sys
 path=os.path.abspath('.')
 if 'tools' in path.replace('\\','/').split('/'):#这里是为了便于开发调试
-    path=path.split('tools',maxsplit=1)[0]+'Library\\utils'
+    path=path.split('tools',maxsplit=1)[0]+'Library/utils'
 else:
-    path=path+'\\Library\\utils'
-if not path in sys.path:
+    path=path+'/Library/utils'
+if not path in (p.replace('\\','/') for p in sys.path):
     sys.path.append(path)
 
 from pbar import Pbar

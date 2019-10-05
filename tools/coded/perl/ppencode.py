@@ -4,7 +4,7 @@
 import execjs
 import sys
 import os
-path=os.path.abspath('.')+'\\Library\\ppencode\\ppencode.js'
+path=os.path.abspath('.')+'/Library/ppencode/ppencode.js'
 
 def get_js():
     f = open(path, encoding='utf-8') # 打开JS文件

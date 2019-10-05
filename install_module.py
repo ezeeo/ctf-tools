@@ -19,7 +19,7 @@ pypath='python'
 
 
 def scan():#扫描存在的文件
-    return scan_files('.\\tools\\',postfix=".py")
+    return scan_files('./tools/',postfix=".py")
 def requisite_pip_module():#请求安装的
     file_list=scan()
     result=['fuzzywuzzy','python-Levenshtein']

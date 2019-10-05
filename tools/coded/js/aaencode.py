@@ -3,7 +3,7 @@
 #version 1.0
 import js2py
 import os
-path=os.path.abspath('.')+'\\Library\\jj_and_aa\\aaencode.js'
+path=os.path.abspath('.')+'/Library/jj_and_aa/aaencode.js'
 
 jsdata=open(path,'r',encoding= 'utf8').read()
 encode=js2py.eval_js(jsdata) #转换JS文件

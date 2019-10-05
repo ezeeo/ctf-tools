@@ -7,11 +7,11 @@ import os
 import time
 import shutil
 path=os.path.abspath('.')
-if 'tools' in path:
-    path=path.split('tools',maxsplit=1)[0]+'Library\\utils'
+if 'tools' in path.replace('\\','/').split('/'):
+    path=path.split('tools',maxsplit=1)[0]+'Library/utils'
 else:
-    path=path+'\\Library\\utils'
-if not path in sys.path:
+    path=path+'/Library/utils'
+if not path in (p.replace('\\','/') for p in sys.path):
     sys.path.append(path)
 from py_env_util import PY_ENV_CL,PY_PIP_CI
 

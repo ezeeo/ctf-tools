@@ -4,7 +4,7 @@
 import execjs
 import sys
 import os
-path=os.path.abspath('.')+'\\Library\\jj_and_aa\\jjencode.js'
+path=os.path.abspath('.')+'/Library/jj_and_aa/jjencode.js'
 
 def get_js():
     f = open(path, encoding='utf-8') # 打开JS文件

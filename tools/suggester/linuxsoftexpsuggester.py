@@ -6,10 +6,10 @@ import sys
 import os
 path=os.path.abspath('.')
 if 'tools' in path.replace('\\','/').split('/'):
-    path=path.split('tools',maxsplit=1)[0]+'Library\\utils'
+    path=path.split('tools',maxsplit=1)[0]+'Library/utils'
 else:
-    path=path+'\\Library\\utils'
-if not path in sys.path:
+    path=path+'/Library/utils'
+if not path in (p.replace('\\','/') for p in sys.path):
     sys.path.append(path)
 #print(path)
 from py_env_util import PY_ENV_CL

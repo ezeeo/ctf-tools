@@ -2,11 +2,11 @@
 #import execjs
 import execjs
 import os
-path=os.path.abspath('.')+'\\Library\\pyjsfuck'
+path=os.path.abspath('.')+'/Library/pyjsfuck'
 class JSFuck():
 
     def __init__(self):
-        f = open(path+'\\jsfuck.js', 'r')
+        f = open(path+'/jsfuck.js', 'r')
         jsf_code = f.read()
         js = execjs.get()
         #print "Using Engine %s" % js.name

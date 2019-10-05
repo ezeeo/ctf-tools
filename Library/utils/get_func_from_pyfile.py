@@ -17,10 +17,10 @@ import os,sys
 
 path=os.path.abspath('.')
 if 'tools' in path.replace('\\','/').split('/'):#这里是为了便于开发调试
-    path=path.split('tools',maxsplit=1)[0]+'Library\\utils'
+    path=path.split('tools',maxsplit=1)[0]+'Library/utils'
 else:
-    path=path+'\\Library\\utils'
-if not path in sys.path:
+    path=path+'/Library/utils'
+if not path in (p.replace('\\','/') for p in sys.path):
     sys.path.append(path)
 
 
@@ -247,6 +247,8 @@ class pyfunc_util:
     def run(self,funcname,completion_input=True,**kargs):
         return self._R.run(funcname,completion_input,**kargs)
 
+    def get_func(self,funcname):
+        return self._R._find_func(funcname)
 
     def get_funclist(self):
         return self._Funcs3

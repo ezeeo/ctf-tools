@@ -1,9 +1,9 @@
 
-import os
+import os,sys
 import threading
 from queue import Queue
 import time
-#进度条v1.2 powered by ezeeo|github:https://github.com/ezeeo/ctf-tools qq:1067530461
+#进度条v1.3 powered by ezeeo|github:https://github.com/ezeeo/ctf-tools qq:1067530461
 
 #初始化时可自定义部分如下(均具有默认值)
 #1.可自定义移动部件(非进度部分)。例如  |####            <=-=>                  |   <=-=>为移动部件,####为进度
@@ -25,6 +25,8 @@ import time
 #1.start_bar():启动进度条的事件循环,开始显示
 #2.end_bar(waiting,newline=True,show_log=False):结束进度条的刷新,waiting表明是否等待所有事件结束,newline代表结束时是否换行,show_log表示结束时是否显示日志
 #3.clear(waiting=False):结束并清除进度条的显示。waiting表明是否等待所有事件结束,不建议事先调用end,除非调用endbar时候参数newline=False
+#4.hidden(pause=False):隐藏进度条的显示,pause指示是否暂停内部事件循环
+#5.reshow():重新显示进度条
 
 #进度的设置
 #set_rate(rate,info=None)
@@ -45,6 +47,16 @@ import time
 #bar.start_bar()
 #bar.set_rate(60)
 #即可看到进度从0走到60
+
+
+path=os.path.abspath('.')
+if 'tools' in path.replace('\\','/').split('/'):#这里是为了便于开发调试
+    path=path.split('tools',maxsplit=1)[0]+'Library/utils'
+else:
+    path=path+'/Library/utils'
+if not path in (p.replace('\\','/') for p in sys.path):
+    sys.path.append(path)
+from thread_safe_access_inject import inject_get_set
 
 class Pbar:
     '''提供进度条功能，可设置宽度，提示信息，帧率填充等等'''
@@ -99,6 +111,15 @@ class Pbar:
 
         self._event_thread=threading.Thread(target=self._event_loop)
         self._is_start=False
+
+
+        self._hidden=False#是否隐藏进度条的显示(print以及控制操作依然可用)
+        self._pause=False#是否暂停事件循环
+
+        fd=inject_get_set(self)#注入线程安全的属性访问方法
+        if fd==False:
+            raise Exception('inject method fail')
+
 
     def start_bar(self):
         if not self._is_start:
@@ -365,12 +386,21 @@ class Pbar:
 
         self._now_fill_num=target_fill#将进度条填充更新到用户最新值(即使还未显示)
 
+    def _event_loop_pause(self):
+        '''检查并等待暂停请求结束'''
+        if self._pause_get()==False:return
+        while 1:
+            if self._pause_get()==False:return
+            time.sleep(0.001)
+
 
 
     def _event_loop(self):
         '''事件循环'''
         try:
             while 1:
+                self._event_loop_pause()
+
                 s_time=time.time()
                 d=None#当前应处理的请求
                 #处理用户渲染请求
@@ -421,7 +451,7 @@ class Pbar:
                     elif d[0]=='i':
                         self._cal_next_frame(d[1],None,d[2])
                     elif d[0]=='p':
-                        print('\r'+d[1]+' '*(self._bar_len+self._info_len+3-len(d[1])))
+                        print('\r'+d[1]+' '*(self._bar_len+self._info_len+3-len(d[1])-1))
                 #无事件
                 else:
                     self._cal_next_frame()
@@ -432,8 +462,8 @@ class Pbar:
                 sleep_time=self._frame_sleep-self._last_render_cache_time-self._last_to_screen_time-self._last_event_time
                 if sleep_time>0:
                     time.sleep(sleep_time)
-
-                self._render_to_screen()
+                if not self._hidden_get():#没有hidden就渲染到屏幕
+                    self._render_to_screen()
                 t_time=time.time()
                 self._last_to_screen_time=t_time-e_time
         except Exception as ex:
@@ -518,10 +548,12 @@ class Pbar:
         self._events.put(('c','bar_moving',bar_moving))
 
     def set_move_mode(self,move_mode):
-        if self._move_mode not in ('lr','ll','rr'):
+        if move_mode not in ('lr','ll','rr'):
             self._log.append('[!]error:move_mode必须在lr(左->右->左),ll(左->右),rr(右->左)中')
             return False
-        self._events.put(('c','move_mode',move_mode))
+        if move_mode==self._move_mode:pass
+        else:
+            self._events.put(('c','move_mode',move_mode))
 
 
     def print(self,s):
@@ -537,11 +569,34 @@ class Pbar:
         print('\r'+' '*(self._bar_len+self._info_len+3),end='')
         print('\r',end='')
 
+    def hidden(self,pause=False):
+        '''隐藏进度条,可选是否需要暂停事件循环'''
+        if not isinstance(pause,bool):
+            raise Exception('pause必须是bool')
+        self._hidden_set(True)
+        if pause:
+            self._pause_set(True)
+        time.sleep(0)
+        print('\r'+' '*(self._bar_len+self._info_len+3),end='')
+        print('\r',end='')
+
+    def reshow(self,new_line=False):
+        '''重新显示进度条'''
+        if not isinstance(new_line,bool):
+            raise Exception('new_line必须是bool')
+        if new_line:
+            print()
+        else:
+            print('\r'+' '*(self._bar_len+self._info_len+3),end='')
+            print('\r',end='')
+        self._hidden_set(False)
+        self._pause_set(False)
+
 
 if __name__ == "__main__":
 
 
-    bar=Pbar(speed=6,bar_len=100,info_len=30,bar_fill='#',bar_moving='<=-=>',move_mode='lr',show_percent_num=True,smooth=True,allow_skip_frame=True,vsync=True)
+    bar=Pbar(speed=15,bar_len=100,info_len=30,bar_fill='#',bar_moving='<=-=>',move_mode='lr',show_percent_num=True,smooth=True,allow_skip_frame=False,vsync=True)
     bar.start_bar()
     fills='0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~'
     bar.set_rate(0,fills)
@@ -553,11 +608,11 @@ if __name__ == "__main__":
 
     # import random,string
     # r=random.randint(0,100)
-    while 1:
-        time.sleep(2)
-        bar.set_rate(100)
-        time.sleep(2)
-        bar.set_rate(0)
+    # while 1:
+    #     time.sleep(2)
+    #     bar.set_rate(100)
+    #     time.sleep(2)
+    #     bar.set_rate(0)
     
 
 
@@ -571,6 +626,11 @@ if __name__ == "__main__":
     #bar.print('endbar...')
     bar.set_rate(100,'1234567890abcdefghijklmnopqrstuvwxyz')
     bar.set_rate(100,fills)
+    bar.hidden()
+    bar.set_rate(0)
+    input('press any key to reshow')
+    bar.reshow()
+    #bar.set_rate(0)
     #bar.end_bar(True,False)
     #bar.clear()
     # bar.end_bar(True,show_log=True)

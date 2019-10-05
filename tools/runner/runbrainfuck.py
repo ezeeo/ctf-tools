@@ -5,10 +5,10 @@ import sys
 
 path=os.path.abspath('.')
 if 'tools' in path.replace('\\','/').split('/'):
-    path=path.split('tools',maxsplit=1)[0]+'Library\\runbrainfuck'
+    path=path.split('tools',maxsplit=1)[0]+'Library/runbrainfuck'
 else:
-    path=path+'\\Library\\runbrainfuck'
-if not path in sys.path:
+    path=path+'/Library/runbrainfuck'
+if not path in (p.replace('\\','/') for p in sys.path):
     sys.path.append(path)
 
 

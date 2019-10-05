@@ -10,8 +10,11 @@ from Library.utils.exec_mode import exec_mode
 from Library.utils.start_py_env import read_pyenv,write_pyenv
 from Library.utils.network_usage import check_use_net
 from Library.utils.help_info import help_info
+from Library.utils.pbar import Pbar
+from Library.utils.run_sys_agent import agent_system
 
-version='0.74'
+
+version='0.75'
 pypath='python'
 
 def init_pyenv():
@@ -52,7 +55,7 @@ try:
     from fuzzywuzzy import process
 except:
     print('Detection of missing essential modules,now install...')
-    os.system(pypath+' .\\install_module.py')
+    os.system(pypath+' ./install_module.py')
     from fuzzywuzzy import fuzz
     from fuzzywuzzy import process
 
@@ -60,7 +63,7 @@ except:
 
 
 def scan():#扫描存在的文件
-    tool_list=scan_files('.\\tools\\',postfix=".py")
+    tool_list=scan_files('./tools/',postfix=".py")
     version_list=[]
     for tool in tool_list:
         Find=False
@@ -198,12 +201,12 @@ def show(argv,tool_list):
     if argv=='modules':
         
         for i in tool_list:
-            print(i[8:].replace('\\','->')+' '*(80-len(i))+'\t\t'+version_dict[i])
+            print(i[8:].replace('\\','->').replace('/','->')+' '*(80-len(i))+'\t\t'+version_dict[i])
     elif argv=='version':
         print('tool_manager->'+version)
         print('install_module->',end='')
         sys.stdout.flush()
-        os.system(pypath+' .\\install_module.py version')
+        os.system(pypath+' ./install_module.py version')
         print('installer->',end='')
         sys.stdout.flush()
         os.system('installer.exe version')
@@ -218,13 +221,13 @@ def show(argv,tool_list):
 #install module的调用
 def lib(argv):
     if argv=='check':
-        os.system(pypath+' .\\install_module.py status')
+        os.system(pypath+' ./install_module.py status')
     elif argv=='in' or argv=='install':
-        os.system(pypath+' .\\install_module.py')
+        os.system(pypath+' ./install_module.py')
     elif argv=='inwc' or argv=='installwithconfirm':
-        os.system(pypath+' .\\install_module.py withconfirm')
+        os.system(pypath+' ./install_module.py withconfirm')
     elif argv=='inwp' or argv=='installwithupdatepip':
-        os.system(pypath+' .\\install_module.py withupdatepip')
+        os.system(pypath+' ./install_module.py withupdatepip')
     else:
         print('>>>Illegal instructions<<<')
 
@@ -264,8 +267,17 @@ print('use #help to view help')
 print('------success get '+str(len(tool_list))+' code block------')
 if os.path.exists('installer.exe'):
     if check_use_net():
-        print('Server message:')
-        os.system('installer.exe serverinfo')
+        bar=Pbar()
+        bar.start_bar()
+        bar.set_rate(None,'get server message..')
+        code,result=agent_system('installer.exe serverinfo')
+        bar.clear(True)
+        if code==0:
+            print('Server message:')
+            print(result.strip())
+        else:
+            print('[!]error in get server message. info:')
+            print(result.strip())
     else:
         print('info:network disable ->check on pytools.bat->::net=0, if net=1 ,it will enabled')
 else:
@@ -306,7 +318,7 @@ if __name__ == '__main__':
         if path_num==-1:
             print('>>>Similarity is too low<<<\n')
             continue
-        print('\nusing-->'+tool_list[path_num][8:-3].replace('\\','->'))
+        print('\nusing-->'+tool_list[path_num][8:-3].replace('\\','->').replace('/','->'))
         try:
             os.system(pypath+' '+code.replace(code.split(' ')[0],tool_list[path_num]).replace('$','"'+buffer+'"'))
         except KeyboardInterrupt as ex:

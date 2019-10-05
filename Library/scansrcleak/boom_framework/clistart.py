@@ -5,10 +5,10 @@ import time
 
 path=os.path.abspath('.')+'/Library/scansrcleak/boom_framework'
 print('[+]path:'+path)
-if not path+'\\converter' in sys.path:
-    sys.path.append(path+'\\converter')
-if not path+'\\transmitter' in sys.path:
-    sys.path.append(path+'\\transmitter')
+if not path+'/converter' in (p.replace('\\','/') for p in sys.path):
+    sys.path.append(path+'/converter')
+if not path+'/transmitter' in (p.replace('\\','/') for p in sys.path):
+    sys.path.append(path+'/transmitter')
 
 #响应信号
 def exit_server(signum, frame):
@@ -64,7 +64,7 @@ class boom_task():
         #设置request
         if self.converter:
             exec('from {} import convert'.format(self.converter[:-3]))
-            r=eval("convert('"+self.request.replace('\\','/')+"',None)")#返回tuple,(调用语句,函数str)
+            r=eval("convert('"+self.request.replace('/','/')+"',None)")#返回tuple,(调用语句,函数str)
             if r==False:
                 raise Exception('convert request fail')
             else:
