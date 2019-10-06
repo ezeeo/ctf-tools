@@ -18,6 +18,7 @@ pyenv=PY_ENV_CL('linux-soft-exploit-suggester',2).get_pyenv()
 expsuggesterpy='./Library/linux-soft-exploit-suggester/linux-soft-exploit-suggester.py'
 
 from download_util import Aria2_Downloader
+from pbar import Pbar
 
 def run(args):
     os.system(pyenv+' '+expsuggesterpy+' '+args)
@@ -57,8 +58,12 @@ def update_db():
         print('[+]下载数据库完成')
     else:
         print('[+]检查数据库更新...')
+        bar=Pbar()
+        bar.start_bar()
+        bar.set_rate(0,'检查更新中...')
         if get_local_ver()<get_web_ver():
-            print('[+]发现数据库更新')
+            bar.print('[+]发现数据库更新')
+            bar.hidden(False)
             del_db()
             url='https://raw.githubusercontent.com/offensive-security/exploit-database/master/files_exploits.csv'
             D=Aria2_Downloader('./Library/linux-soft-exploit-suggester')
@@ -67,7 +72,9 @@ def update_db():
             set_locat_ver(get_web_ver())
             print('[+]更新数据库完成')
         else:
+            bar.hidden(False)
             print('[+]未找到更新')
+        bar.clear()
 
 
 def del_db():

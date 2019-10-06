@@ -25,5 +25,5 @@ class Aria2_Downloader:
 
 
     def _run_aria(self,args):
-        input('"'+self._aria2c+'" '+args)
+        #input('"'+self._aria2c+'" '+args)
         return os.system('""'+self._aria2c+'" '+args+'"')

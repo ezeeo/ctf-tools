@@ -26,3 +26,4 @@ if not path in (p.replace('\\','/') for p in sys.path):
 from py_env_util import PY_ENV_CL,PY_PIP_CI
 PY_PIP_CI(PY_ENV_CL('lib路径(Library目录下的)(可省略Library)',python版本(2/3/auto).get_pyenv()).ensure('需要的模块名')
 14.增加了外部源下载部分(extra lib)。有助于减少源服务器压力
+14.兼容了linux

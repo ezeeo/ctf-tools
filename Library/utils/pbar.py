@@ -3,7 +3,7 @@ import os,sys
 import threading
 from queue import Queue
 import time
-#进度条v1.3 powered by ezeeo|github:https://github.com/ezeeo/ctf-tools qq:1067530461
+#进度条v1.3-fix powered by ezeeo|github:https://github.com/ezeeo/ctf-tools qq:1067530461
 
 #初始化时可自定义部分如下(均具有默认值)
 #1.可自定义移动部件(非进度部分)。例如  |####            <=-=>                  |   <=-=>为移动部件,####为进度
@@ -57,6 +57,8 @@ else:
 if not path in (p.replace('\\','/') for p in sys.path):
     sys.path.append(path)
 from thread_safe_access_inject import inject_get_set
+from value_snapshot import value_snapshot,value_rollback
+
 
 class Pbar:
     '''提供进度条功能，可设置宽度，提示信息，帧率填充等等'''
@@ -99,9 +101,11 @@ class Pbar:
         self._bar_template=None#进度条模板
         self._set_show_template()
 
-        self._now_fill_num=0#进度条值(0-100)
+        self._now_fill_num=0#进度条值(0-self._bar_len)
         self._now_str_info=''#显示的信息
         self._tmp_frame=''#缓存帧
+        self._now_rate=0#当前百分比
+
 
         self._last_event_time=0#上次处理event用时
         self._last_render_cache_time=0#上次计算(刷新到缓存)用时
@@ -119,6 +123,7 @@ class Pbar:
         fd=inject_get_set(self)#注入线程安全的属性访问方法
         if fd==False:
             raise Exception('inject method fail')
+        value_snapshot(self)
 
 
     def start_bar(self):
@@ -268,9 +273,9 @@ class Pbar:
                 self._bar_template[i]=info[info_start_index+num]
                 num+=1
 
-    def _render_persent_num(self,fill_num):
+    def _render_persent_num(self,rate_num):
         i=self._bar_len//2-1
-        s=str(fill_num)+'%'
+        s=str(rate_num)+'%'
         for ii,ss in enumerate(s):
             self._bar_template[i+ii]=ss
 
@@ -321,7 +326,10 @@ class Pbar:
         self._render_info_position(info,self._info_position)
 
         if self._show_percent_num:
-            self._render_persent_num(fill_num)
+            if frame_mode==False:
+                self._render_persent_num(self._now_rate_get())
+            else:
+                self._render_persent_num(int(fill_num/self._bar_len*100))
 
         self._tmp_frame='\r'+''.join(self._bar_template)
 
@@ -394,6 +402,21 @@ class Pbar:
             time.sleep(0.001)
 
 
+    def _process_event(self,d):
+        if d[0]=='c':#处理控制信号
+            if d[1]=='end':
+                return True
+            self._event_handle(d)
+        elif d[0]=='a':
+            self._cal_next_frame(d[1],d[2],d[3])
+        elif d[0]=='r':
+            self._cal_next_frame(d[1],d[2],None)
+        elif d[0]=='i':
+            self._cal_next_frame(d[1],None,d[2])
+        elif d[0]=='p':
+            print('\r'+d[1]+' '*(self._bar_len+self._info_len+3-len(d[1])-1))
+        return False
+
 
     def _event_loop(self):
         '''事件循环'''
@@ -429,29 +452,18 @@ class Pbar:
                 #非垂直同步的跳帧
                 if not self._vsync:
                     while not self._events.empty() and (d==None or d[0] in ('a','r','i')):
+                        if d!=None:
+                            self._process_event(d)
+                        if self._frame_sleep-self._last_render_cache_time-self._last_to_screen_time<=time.time()-s_time:break
                         d=self._events.get()
-                        if d[0] in ('a','r','i'):pass
-                        else:break
 
-                
                 c_time=time.time()
                 self._last_event_time=c_time-s_time
                 #处理事件
                 if d!=None or not self._events.empty():
                     if d==None:d=self._events.get()
+                    if self._process_event(d):break
                     
-                    if d[0]=='c':#处理控制信号
-                        if d[1]=='end':
-                            break
-                        self._event_handle(d)
-                    elif d[0]=='a':
-                        self._cal_next_frame(d[1],d[2],d[3])
-                    elif d[0]=='r':
-                        self._cal_next_frame(d[1],d[2],None)
-                    elif d[0]=='i':
-                        self._cal_next_frame(d[1],None,d[2])
-                    elif d[0]=='p':
-                        print('\r'+d[1]+' '*(self._bar_len+self._info_len+3-len(d[1])-1))
                 #无事件
                 else:
                     self._cal_next_frame()
@@ -494,8 +506,10 @@ class Pbar:
             return False
         elif rate!=None and info!=None:
             self._user_render_events.put(('a',False,int(rate/100*self._bar_len),info))
+            self._now_rate_set(rate)
         elif rate!=None:
             self._user_render_events.put(('r',False,int(rate/100*self._bar_len)))
+            self._now_rate_set(rate)
         else:
             self._user_render_events.put(('i',False,info))
 
@@ -512,8 +526,11 @@ class Pbar:
             self.show_log()
         elif newline:
             print()
-        
-        self._is_start=False
+        #清空状态
+        value_rollback(self,True,True)
+        self._set_show_template()
+        self._event_thread=threading.Thread(target=self._event_loop)
+        #self._is_start=False
 
 
     def set_speed(self,speed):
@@ -576,7 +593,6 @@ class Pbar:
         self._hidden_set(True)
         if pause:
             self._pause_set(True)
-        time.sleep(0)
         print('\r'+' '*(self._bar_len+self._info_len+3),end='')
         print('\r',end='')
 
@@ -596,7 +612,9 @@ class Pbar:
 if __name__ == "__main__":
 
 
-    bar=Pbar(speed=15,bar_len=100,info_len=30,bar_fill='#',bar_moving='<=-=>',move_mode='lr',show_percent_num=True,smooth=True,allow_skip_frame=False,vsync=True)
+    #bar=Pbar(speed=15,bar_len=100,info_len=30,bar_fill='#',bar_moving='<=-=>',move_mode='lr',show_percent_num=True,smooth=True,allow_skip_frame=False,vsync=True)
+    bar=Pbar(speed=15,bar_len=4,info_len=30,bar_fill='#',bar_moving='',move_mode='lr',show_percent_num=True,smooth=False,allow_skip_frame=True,vsync=False)
+
     bar.start_bar()
     fills='0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~'
     bar.set_rate(0,fills)
@@ -627,9 +645,13 @@ if __name__ == "__main__":
     bar.set_rate(100,'1234567890abcdefghijklmnopqrstuvwxyz')
     bar.set_rate(100,fills)
     bar.hidden()
-    bar.set_rate(0)
-    input('press any key to reshow')
+    bar.set_rate(100)
+    input('press any key to end')
     bar.reshow()
+    bar.clear(False)
+    input('press any key to resart')
+    bar.start_bar()
+    bar.set_rate(100,fills)
     #bar.set_rate(0)
     #bar.end_bar(True,False)
     #bar.clear()

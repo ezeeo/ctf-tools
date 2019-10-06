@@ -95,5 +95,6 @@ def get_db():
 
 if __name__ == "__main__":
     banner()
+    get_db()
     args=inputargs()
     run(args)

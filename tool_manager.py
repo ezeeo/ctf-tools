@@ -18,10 +18,13 @@ version='0.75'
 pypath='python'
 
 def init_pyenv():
+    if sys.version[0]!='3':
+        print('error:You must start with Python 3')
+        exit(1)
     #设置pypath
     global pypath
-    if len(sys.argv)==1:
-        pass#正常启动
+    if len(sys.argv)==1:#正常启动
+        pass
     elif len(sys.argv)==2:
         if sys.argv[1]=='#':#从文件读取
             find=read_pyenv()
@@ -29,7 +32,7 @@ def init_pyenv():
                 print('error:can not find pyenv in pytools.bat')
                 exit()
             pypath=find
-        else:#写入
+        else:#写入指定的pypath
             pypath=sys.argv[1]
             write_pyenv(pypath)
 

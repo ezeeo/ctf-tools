@@ -23,6 +23,8 @@ def scan():#扫描存在的文件
 def requisite_pip_module():#请求安装的
     file_list=scan()
     result=['fuzzywuzzy','python-Levenshtein']
+    if sys.platform=='linux':
+        result.append('readline')
     for path in file_list:
         f = open(path, 'r',encoding='UTF-8')
         while True:
@@ -55,7 +57,7 @@ def auto_install(module_list,confirm):#安装
     for mo in module_list:
         #print('pip install '+mo)
         if confirm==True:
-            input('now install ' + mo + ', press any key to continue')
+            input('now install ' + mo + ', press any key to continue\n'+pypath+' -m pip install '+mo)
         os.system(pypath+' -m pip install '+mo)
 
 def default(confirm):
@@ -131,7 +133,6 @@ def bar_status():
 if __name__ =='__main__':
     pypath=read_pyenv()
     if pypath==False:pypath='python'
-    
     if len(sys.argv)==1:
         default(False)
     elif sys.argv[1]=='version':
