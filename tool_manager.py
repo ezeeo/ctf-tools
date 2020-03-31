@@ -24,6 +24,7 @@ def init_pyenv():
     #设置pypath
     global pypath
     if len(sys.argv)==1:#正常启动
+        print('normal start')
         pass
     elif len(sys.argv)==2:
         if sys.argv[1]=='#':#从文件读取
@@ -50,6 +51,7 @@ def init_ext_lib():
 
 
 init_pyenv()
+print('pypath:'+pypath)
 init_lib()
 init_ext_lib()
 
@@ -154,7 +156,7 @@ def net(s):
                 os.system('installer.exe update')
             elif op[0]=='upmain':
                 os.system('installer.exe get_main')
-            elif op[1]=='uptools':
+            elif op[0]=='uptools':
                 os.system('installer.exe get_tools')
             else:
                 print('>>>no such code<<<')
@@ -164,7 +166,7 @@ def net(s):
                 os.system('installer.exe update_with_cover')
             elif op[0]=='upmain':
                 os.system('installer.exe update_main')
-            elif op[1]=='uptools':
+            elif op[0]=='uptools':
                 os.system('installer.exe update_tools')
             else:
                 print('>>>no such code<<<')
@@ -323,7 +325,11 @@ if __name__ == '__main__':
             continue
         print('\nusing-->'+tool_list[path_num][8:-3].replace('\\','->').replace('/','->'))
         try:
+            if sys.platform=='win32':
+                os.system('title '+tool_list[path_num][8:-3].replace('\\','-').replace('/','-'))
             os.system(pypath+' '+code.replace(code.split(' ')[0],tool_list[path_num]).replace('$','"'+buffer+'"'))
         except KeyboardInterrupt as ex:
             pass
+        if sys.platform=='win32':
+            os.system('title pytools')
         print()

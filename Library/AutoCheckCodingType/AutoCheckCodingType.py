@@ -254,12 +254,12 @@ class CodingTypeDetector():
                 
 
         #拼接并将结果写入html
-        with open('./Reports/'+filename,'w',encoding='utf-8') as f:
+        fpath=os.path.split(__file__)[0]+'/Reports/'+filename
+        with open(os.path.split(__file__)[0]+'/Reports/'+filename,'w',encoding='utf-8') as f:
             f.write(htmlhead+tabledata+htmlend)
         if sys.platform=='win32':
-            return '.\\Reports\\'+filename
-        else:
-            return './Reports/'+filename
+            return fpath.replace('/','\\')
+        return fpath
 
     #展示扫描结果
     def __show_report(self,result,errors):

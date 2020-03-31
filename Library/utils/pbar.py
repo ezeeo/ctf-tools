@@ -1,9 +1,9 @@
-
+# -*- coding: utf-8
 import os,sys
 import threading
 from queue import Queue
 import time
-#进度条v1.3-fix powered by ezeeo|github:https://github.com/ezeeo/ctf-tools qq:1067530461
+#进度条v1.5 powered by ezeeo|github:https://github.com/ezeeo/ctf-tools qq:1067530461
 
 #初始化时可自定义部分如下(均具有默认值)
 #1.可自定义移动部件(非进度部分)。例如  |####            <=-=>                  |   <=-=>为移动部件,####为进度
@@ -17,6 +17,7 @@ import time
 #9.可自定义是否启用允许跳帧(注意:所有用户请求的帧都不会跳过,跳帧仅仅适用于平滑模式生成的帧)
 #10.可自定义是否启用垂直同步(显示事件处理与显示同步)(要使用平滑模式必须启用垂直同步)
 #11.可自定义是否展示百分比的数字show_percent_num
+#12.可自定义是否在检测到无其他线程时自动结束本线程
 
 #运行时可更改以下配置
 #进度条刷新速度,可移动部件(非进度部分),进度部分的填充字符,可移动部件的移动方式
@@ -35,15 +36,15 @@ import time
 #注意:rate和info不应该同时是None
 
 #输出字符串
-#print(str):用于在进度条上方输出字符串
+#print(str,newline=True):用于在进度条上方输出字符串
 
 #日志
-#show_log():输出运行日志,建议不要在进度条未结束时输出
+#show_log():输出运行日志,可以在运行时或结束后输出日志
 
 #示例
 #最简用法
 #from pbar import Pbar
-#bar=Pbar()
+#bar=Pbar(auto_off=False)
 #bar.start_bar()
 #bar.set_rate(60)
 #即可看到进度从0走到60
@@ -62,7 +63,7 @@ from value_snapshot import value_snapshot,value_rollback
 
 class Pbar:
     '''提供进度条功能，可设置宽度，提示信息，帧率填充等等'''
-    def __init__(self,speed=15,info_speed=1,bar_len='Auto',info_len='Auto',bar_fill='#',bar_moving='<=-=>',move_mode='lr',show_percent_num=False,smooth=True,allow_skip_frame=True,vsync=True):
+    def __init__(self,speed=15,info_speed=1,bar_len='Auto',info_len='Auto',bar_fill='#',bar_moving='<=-=>',move_mode='lr',show_percent_num=False,smooth=True,allow_skip_frame=True,vsync=True,auto_off=True):
         '''smooth即平滑模式，设定一个进度向另一个进度切换时是否平滑，allow_skip_frame标志是否允许跳过平滑帧'''
         self._fps=speed
         self._info_fps=info_speed#info的fps
@@ -79,6 +80,7 @@ class Pbar:
 
         self._terminal_size=os.get_terminal_size()
 
+        self._auto_off=auto_off
 
         self._log=[]
 
@@ -134,8 +136,12 @@ class Pbar:
 
 
     def show_log(self):
+        
         for l in self._log:
-            print(l)
+            if self._is_start:
+                self.print(l)
+            else:
+                print(l)
 
 
     def _init_direction(self):
@@ -201,6 +207,9 @@ class Pbar:
                 return False
         if not isinstance(self._show_percent_num,bool):
             self._log.append('[!]error:show_percent_num必须是bool')
+            return False
+        if not isinstance(self._auto_off,bool):
+            self._log.append('[!]error:auto_off必须是bool')
             return False
         return True
 
@@ -396,7 +405,13 @@ class Pbar:
 
     def _event_loop_pause(self):
         '''检查并等待暂停请求结束'''
-        if self._pause_get()==False:return
+        if self._auto_off:
+            thread_num =sum(t.isAlive() for t in threading.enumerate())
+            if thread_num==1:
+                self._events.put(('c','end'))#检测到其他线程全部死亡后自动结束本线程
+                return
+        if self._pause_get()==False:
+            return
         while 1:
             if self._pause_get()==False:return
             time.sleep(0.001)
@@ -414,7 +429,10 @@ class Pbar:
         elif d[0]=='i':
             self._cal_next_frame(d[1],None,d[2])
         elif d[0]=='p':
-            print('\r'+d[1]+' '*(self._bar_len+self._info_len+3-len(d[1])-1))
+            if '\n' in d[1]:
+                print('\r'+' '*(self._bar_len+self._info_len+3),end='')
+                print('\r',end='')
+            print('\r'+d[1]+' '*(self._bar_len+self._info_len+3-len(d[1])-1),end='')
         return False
 
 
@@ -530,7 +548,7 @@ class Pbar:
         value_rollback(self,True,True)
         self._set_show_template()
         self._event_thread=threading.Thread(target=self._event_loop)
-        #self._is_start=False
+        self._is_start=False
 
 
     def set_speed(self,speed):
@@ -573,11 +591,14 @@ class Pbar:
             self._events.put(('c','move_mode',move_mode))
 
 
-    def print(self,s):
+    def print(self,s,newline=True):
         if not isinstance(s,str):
             self._log.append('[!]warn :s必须是str')
             return False
-        self._events.put(('p',s))
+        if newline:
+            self._events.put(('p',s+'\n'))
+        else:
+            self._events.put(('p',s))
 
     def clear(self,waiting=False):
         '''结束并清除进度条。注意不建议事先调用end,除非调用endbar时候参数newline=False'''
@@ -598,6 +619,8 @@ class Pbar:
 
     def reshow(self,new_line=False):
         '''重新显示进度条'''
+        if self._hidden_get()==False:
+            return
         if not isinstance(new_line,bool):
             raise Exception('new_line必须是bool')
         if new_line:
@@ -652,6 +675,8 @@ if __name__ == "__main__":
     input('press any key to resart')
     bar.start_bar()
     bar.set_rate(100,fills)
+    bar.show_log()
+
     #bar.set_rate(0)
     #bar.end_bar(True,False)
     #bar.clear()

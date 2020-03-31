@@ -3,16 +3,19 @@ import os
 import configparser
 import subprocess
 import json
-from matcher import Matcher
-path=os.path.abspath('.')
-if 'tools' in path.replace('\\','/').split('/'):#这里是为了便于开发调试
-    path=path.split('tools',maxsplit=1)[0]+'Library/utils'
-else:
-    path=path+'/Library/utils'
-if not path in (p.replace('\\','/') for p in sys.path):
-    sys.path.append(path)
 
-from pbar import Pbar
+
+try:
+    from matcher import Matcher
+    from pbar import Pbar
+except Exception as identifier:
+    path=os.path.dirname( __file__)
+    if not path in (p.replace('\\','/') for p in sys.path):
+        sys.path.append(path)
+    from matcher import Matcher
+    from pbar import Pbar
+
+
 
 class PY_ENV_CL:
     '''checker and loader'''
@@ -40,7 +43,7 @@ class PY_ENV_CL:
                 self._clean_to_dir()
             if not self._check_path_exists():raise Exception('debug')
         self._check_py_ver()
-        self._conf_path='./Library/utils/env_conf.ini'
+        self._conf_path=os.path.dirname( __file__)+'/env_conf.ini'
         #self._conf_path='D:/ctf-tool/Library/utils/env_conf.ini'
         self._config=self._read_default_conf()
         self._check_conf()
@@ -308,7 +311,7 @@ class PY_PIP_CI:
         '''获取当前python环境的pip列表'''
         #self._create_bat()
         #s=subprocess.Popen(['cmd','/C',".\\Library\\utils\\tmp.bat"],bufsize=0,stdout=subprocess.PIPE,universal_newlines=True)
-        s=subprocess.Popen(['cmd','/C',"set PYTHONIOENCODING=UTF-8&&{} ./Library/utils/get_py_pip_list.py".format(self._pyenv)],bufsize=0,stdout=subprocess.PIPE,stdin=subprocess.PIPE,universal_newlines=True)
+        s=subprocess.Popen(['cmd','/C',"set PYTHONIOENCODING=UTF-8&&{} {}/get_py_pip_list.py".format(self._pyenv,os.path.dirname( __file__))],bufsize=0,stdout=subprocess.PIPE,stdin=subprocess.PIPE,universal_newlines=True)
         result=''
         while True:
             nextline=s.stdout.readline().strip()

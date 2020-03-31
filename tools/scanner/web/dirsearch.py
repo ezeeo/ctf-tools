@@ -1,5 +1,5 @@
 #coding=utf-8
-#version 1.1
+#version 1.2
 import sys
 import os
 import shutil
@@ -77,8 +77,11 @@ def clear():
 if __name__ == "__main__":
     if len(sys.argv)>1:
         args=' '.join(sys.argv[1:])
-        #clear()
-        fd=os.system('start /WAIT '+pyenv+' '+dirsearch+' '+args+' /K')
+        if '-u' in args:
+            #clear()
+            fd=os.system('start /WAIT '+pyenv+' '+dirsearch+' '+args+' /K')
+        else:
+            fd=os.system(pyenv+' '+dirsearch+' '+args)
         Post_processing(fd)
         exit(fd)
 
@@ -90,6 +93,9 @@ if __name__ == "__main__":
         args=input('dirsearch args>')
         if args=='exit()':break
         elif args.strip()=='':continue
-        #clear()
-        fd=os.system('start /WAIT '+pyenv+' '+dirsearch+' '+args+' /K')
+        if '-u' in args:
+            #clear()
+            fd=os.system('start /WAIT '+pyenv+' '+dirsearch+' '+args+' /K')
+        else:
+            fd=os.system(pyenv+' '+dirsearch+' '+args)
         Post_processing(fd)

@@ -17,6 +17,11 @@ from Library.utils.file_scanner import scan_files
 version='1.4'
 pypath='python'
 
+try:
+    from pip._internal.utils.misc import get_installed_distributions
+except:
+    print('error in install : pip version must>10')
+    exit()
 
 def scan():#扫描存在的文件
     return scan_files('./tools/',postfix=".py")
@@ -41,7 +46,7 @@ def requisite_pip_module():#请求安装的
     return list(set(result))
 
 def should_install_modules(module_list):#需要安装的
-    from pip._internal.utils.misc import get_installed_distributions
+    
     mo=get_installed_distributions()
     modules=[]
     for i in mo:

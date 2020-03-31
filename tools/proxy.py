@@ -1,5 +1,5 @@
 #coding=utf-8
-#version 1.4
+#version 1.8
 
 import socket
 import threading
@@ -25,15 +25,15 @@ from get_func_from_pyfile import pyfunc_util
 
 
 class ProxyForward:
-    def __init__(self, host_forward: str, port_forward: int,host_server='127.0.0.1',port_server=9999,bar=None):
+    def __init__(self, host_forward: str, port_forward: int,host_server='127.0.0.1',port_server=9999,bar=None,debug=False):
         self.host_server = host_server
         self.port_server = port_server
         self.host_forward = host_forward
         self.port_forward = port_forward
         self.listener = 50
         self.buffer = 102400
-        self.out_processer=lambda x:x
-        self.in_processer=lambda x:x
+        self.out_processer=[lambda x:x.replace('Connection: keep-alive','Connection: close'),lambda x:x]#分别处理请求头和请求体
+        self.in_processer=[lambda x:x,lambda x:x]#分别处理响应头和响应体
         self.sock=None#监听socket
         self.codec='utf-8'
         self._conns=Queue()
@@ -43,6 +43,7 @@ class ProxyForward:
         self._bar=bar
         if self._bar!=None:
             self._bar.start_bar()
+            self._bar.hidden()
 
         self._end_server=False#决定转发器线程的关闭
         self._is_end_accept=False#标志是否结束accept
@@ -56,8 +57,8 @@ class ProxyForward:
         self._forword_fail_num=0
 
         self._history=[]#转发的历史记录(原始请求,处理后请求体,原始响应,处理后响应体,错误信息)
-
-
+        self._debug=debug
+        self._isshow_his=False
 
     def add_forword_success_num(self):
         self._lock.acquire()
@@ -98,22 +99,43 @@ class ProxyForward:
             print(s)
 
 
-    def show_history(self,skip=True):
-        print('='*61)
-        for log in self._history:
-            if skip==True and log[4]==None:
-                continue
-            print('>'*24+'   raw req   '+'>'*24)
-            print(log[0])
-            print('>'*24+'processed req'+'>'*24)
-            print(log[1])
-            print('<'*24+'   raw res   '+'<'*24)
-            print(log[2])
-            print('<'*24+'processed res'+'<'*24)
-            print(log[3])
-            print('-'*24+'  errorinfo  '+'-'*24)
-            print(log[4])
+    def show_history(self,skip=True,rt_mode=False):
+        if self._isshow_his:return
+        self._isshow_his=True
+        if self._debug and rt_mode:
+            if len(self._history)!=0:
+                self._print('='*61)
+                while len(self._history)!=0:
+                    log=self._history.pop(0)
+                    self._print('>'*24+'   raw req   '+'>'*24)
+                    self._print(log[0])
+                    self._print('>'*24+'processed req'+'>'*24)
+                    self._print(log[1])
+                    self._print('<'*24+'   raw res   '+'<'*24)
+                    self._print(log[2])
+                    self._print('<'*24+'processed res'+'<'*24)
+                    self._print(log[3])
+                    self._print('-'*24+'  errorinfo  '+'-'*24)
+                    self._print(str(log[4]))
+                    self._print('='*61)
+        else:
             print('='*61)
+            for log in self._history:
+                if skip==True and log[4]==None:
+                    continue
+                print('>'*24+'   raw req   '+'>'*24)
+                print(log[0])
+                print('>'*24+'processed req'+'>'*24)
+                print(log[1])
+                print('<'*24+'   raw res   '+'<'*24)
+                print(log[2])
+                print('<'*24+'processed res'+'<'*24)
+                print(log[3])
+                print('-'*24+'  errorinfo  '+'-'*24)
+                print(log[4])
+                print('='*61)
+            self._history.clear()
+        self._isshow_his=False
 
 
     def _async_raise(self,tid, exctype):
@@ -155,8 +177,9 @@ class ProxyForward:
             if end:
                 break
             else:
-                time.sleep(0.1)
+                time.sleep(0.01)
         self._waitting_forwarder_end()
+        self._print('[+]end all forwarder')
         if self.sock!=None:
             self.sock.close()
         self._print('[+]end server')
@@ -168,17 +191,42 @@ class ProxyForward:
                 if t!=None and t.isAlive():
                     self._stop_thread(t)
         else:
+            loop_num=0
             while 1:
+                loop_num+=1
                 end=True
+                e_num=0
                 for t in self._threads:
                     if t!=None and t.isAlive():
                         end=False
-                        break
+                    else:
+                        e_num+=1
+                if loop_num%50==1:
+                    self._bar.set_rate(0,'end forwarder {}|{}'.format(e_num,len(self._threads)))
                 if end:
                     return
                 else:
                     time.sleep(0.01)
             
+
+    def waitting_server_end(self):
+        '''阻塞到服务器接收到退出信号并且成功退出'''
+        while 1:
+            self._lock.acquire()
+            end_server=self._end_server
+            self._lock.release()
+            if self._bar!=None:
+                if self.get_processing_conn_num()==self._forwarder_num:
+                    self._bar.set_move_mode('ll')
+                else:
+                    self._bar.set_move_mode('lr')
+
+                self._bar.set_rate(int((self._conns.qsize()+self.get_processing_conn_num())/self.listener*100),'conn/max={}/{} f_s|f_f={}|{}'.format(self._conns.qsize()+self.get_processing_conn_num(),self.listener,self.get_forword_success_num(),self.get_forword_fail_num()))
+            if end_server:
+                return
+            else:
+                time.sleep(1)
+
 
 
     def server(self,forwarder_num=1,waitting=False):
@@ -189,23 +237,12 @@ class ProxyForward:
         self._accept_thread=threading.Thread(target=self._accepter)
         self._accept_thread.start()
         self._forwarder_num=forwarder_num
+        self._print("[+]start forworder...")
         self._start_forworder()
         self._print("[+]server start success")
         if waitting:
-            while 1:
-                self._lock.acquire()
-                end_server=self._end_server
-                self._lock.release()
-                if self.get_processing_conn_num()==forwarder_num:
-                    self._bar.set_move_mode('ll')
-                else:
-                    self._bar.set_move_mode('lr')
-
-                self._bar.set_rate(int((self._conns.qsize()+self.get_processing_conn_num())/self.listener*100),'conn/max={}/{} f_s|f_f={}|{}'.format(self._conns.qsize()+self.get_processing_conn_num(),self.listener,self.get_forword_success_num(),self.get_forword_fail_num()))
-                if end_server:
-                    return
-                else:
-                    time.sleep(1)
+            self._bar.reshow()
+            self.waitting_server_end()
 
 
     def _start_forworder(self):
@@ -214,6 +251,8 @@ class ProxyForward:
             t=threading.Thread(target=self._forwarder_thread)
             t.start()
             self._threads.append(t)
+            if (i+1)%100==0:
+                self._bar.set_rate((i+1)*100//self._forwarder_num,'satrting forworder {}|{}'.format(i+1,self._forwarder_num))
         self._print('[+]success start {} forworder'.format(self._forwarder_num))
 
     def _start_listen(self):
@@ -227,17 +266,23 @@ class ProxyForward:
         self._print("[+]server begin to listen....")
 
 
-    def set_out_processer(self,method):
+    def set_out_processer(self,head_method,body_method):
         '''设置发送的请求数据的处理函数,输入输出字符串'''
-        if not callable(method):
+        if not (head_method==None or callable(head_method)) or not (body_method==None or callable(body_method)):
             raise Exception('out_processer必须是callable')
-        self.out_processer=method
+        if head_method!=None:
+            self.out_processer[0]=head_method
+        if body_method!=None:
+            self.out_processer[1]=body_method
 
-    def set_in_processer(self,method):
+    def set_in_processer(self,head_method,body_method):
         '''设置发送的请求数据的处理函数,输入输出字符串'''
-        if not callable(method):
+        if not (head_method==None or callable(head_method)) or not (body_method==None or callable(body_method)):
             raise Exception('in_processer必须是callable')
-        self.in_processer=method
+        if head_method!=None:
+            self.in_processer[0]=head_method
+        if body_method!=None:
+            self.in_processer[1]=body_method
 
 
     def _get_http_body(self,data):
@@ -277,11 +322,15 @@ class ProxyForward:
         '''重建content的长度'''
         body=self._get_http_body(data)
         lenth=len(body)
-        data=data.split(b'Content-Length: ',maxsplit=1)
-        if len(data)==1:
-            return data[0]
-        data[1]= str(lenth).encode(self.codec)+b'\r\n'+data[1].split(b'\r\n',maxsplit=1)[1]
-        return b'Content-Length: '.join(data)
+        if b'Transfer-Encoding: chunked' in data:
+            return data.replace(b'Transfer-Encoding: chunked',b'Content-Length: '+str(lenth).encode(self.codec))
+            
+        else:
+            data=data.split(b'Content-Length: ',maxsplit=1)
+            if len(data)==1:
+                return data[0]
+            data[1]= str(lenth).encode(self.codec)+b'\r\n'+data[1].split(b'\r\n',maxsplit=1)[1]
+            return b'Content-Length: '.join(data)
 
 
 
@@ -290,14 +339,15 @@ class ProxyForward:
         try:
             log_data[0]=data.decode(self.codec)
             try:
-                body=self.out_processer(self._get_http_body(data.decode(self.codec)))
+                head=self.out_processer[0](self._get_http_head(data.decode(self.codec)))
+                body=self.out_processer[1](self._get_http_body(data.decode(self.codec)))
                 log_data[1]=body
             except Exception as ex:
+                head=self._get_http_head(data.decode(self.codec))
                 body=self._get_http_body(data.decode(self.codec))
                 self._print('\n[!]error in out_processer->'+str(ex))
 
-            head=self._get_http_head(data.decode(self.codec))
-            head=head.replace('Connection: keep-alive','Connection: close')
+        
 
             data=head+'\r\n\r\n'+body+'\r\n\r\n'
 
@@ -313,32 +363,44 @@ class ProxyForward:
                     result=head+'\r\n\r\n'+body+'\r\n\r\n'
                 elif 'Content-Type: text/html' in head:
                     result=result.decode(self.codec)
-                else:#原样返回
-                    pass
+                else:#未明确说明尝试解码否则原样返回
+                    try:
+                        result=result.decode(self.codec)
+                    except Exception as ex:
+                        pass
 
                 log_data[2]=result
                 try:
-                    body=self.in_processer(self._get_http_body(result))
+                    head=self.in_processer[0](self._get_http_head(result))
+                    body=self.in_processer[1](self._get_http_body(result))
                     log_data[3]=body
                 except Exception as ex:
+                    head=self._get_http_head(result)
                     body=self._get_http_body(result)
                     self._print('\n[!]error in in_processer->'+str(ex))
                 
-                head=self._get_http_head(result)
+                
                 if 'Content-Type: text/html' in head:
                     body=body.encode(self.codec)
                 if 'Content-Encoding: gzip' in head:
                     if isinstance(body,str):
                         body=body.encode(self.codec)
                     body=self._gzip_encode(body)
+                if isinstance(body,str):
+                    body=body.encode(self.codec)
                 result=head.encode(self.codec)+b'\r\n\r\n'+body+b'\r\n\r\n'
                 result=self._rebuild_content_lenth(result)
 
                 self._history.append(log_data)
+                if self._debug:
+                    self.show_history(rt_mode=True)
+
                 return (True,result)
         except Exception as ex:
             log_data[4]=ex
             self._history.append(log_data)
+            if self._debug:
+                self.show_history(rt_mode=True)
             return (False,ex)
 
 
@@ -381,7 +443,7 @@ class ProxyForward:
             end_server=self._end_server
             self._lock.release()
             if end_server:
-                self._print('[+]end forwarder')
+                #self._print('[+]end forwarder')
                 return
             try:
                 conn, addr=self._conns.get(timeout=1)
@@ -426,56 +488,81 @@ class ProxyForward:
         sock.sendall(data)
 
 
-    def _recv_http(self,sock):
-        time.sleep(0.1)
-        #s_time=time.time()
-        data=b''
+    def _recv_chunked(self,sock,data):
+        '''读取Transfer-Encoding: chunked'''
+        head=data.split(b'\r\n\r\n',maxsplit=1)[0]
+        real_body=b''
+        body=data.split(b'\r\n\r\n',maxsplit=1)[1]#初始的响应体，每轮的那一部分
         while 1:
-            data_recv = sock.recv(self.buffer)
-            #self._bar.print(str(int((time.time()-s_time)*1000))+'ms')
-            if data_recv==b'':
-                break
-            data+=data_recv
-            if b'\r\n\r\n' in data_recv:
-                contenlen_index=data_recv.find(b'Content-Length: ')
-                if contenlen_index==-1:
-                    if data_recv.count(b'\r\n\r\n')==2:
-                        break
-                    elif data[:3]==b'GET':
+            if b'\r\n' not in body:
+                body+=sock.recv(self.buffer)
+                continue
+            else:
+                Lbody=body.split(b'\r\n',maxsplit=1)
+                chunked_lenth=int(Lbody[0],base=16)
+                if chunked_lenth==0:
+                    return head+b'\r\n\r\n'+real_body
+
+                if len(Lbody[1])<chunked_lenth:
+                    body+=sock.recv(chunked_lenth-len(Lbody[1])+2)
+                    continue
+                #组装真实body
+                real_body+=Lbody[1][:chunked_lenth]
+                body=Lbody[1][chunked_lenth:]
+                #接收换行符
+                while 1:
+                    if len(body)>=2 and body[:2]==b'\r\n':
+                        body=body[2:]
                         break
                     else:
-                        time.sleep(1)
+                        body+=sock.recv(self.buffer)
 
-                        tmp_d=sock.recv(self.buffer)
-                        if tmp_d!=b'':
-                            data+=tmp_d
-                            continue
-                        else:
-                            break
-                
-                #正常接收http body
-                tmp=data_recv[contenlen_index:]
 
-                num=int(tmp.split(b'\r\n')[0][16:].decode('utf-8'))
-                now_num=len(tmp.split(b'\r\n')[-1])
-                if num==now_num:
-                    break
-                while 1:
-                    if data.count(b'\r\n\r\n')==2:
+            
+
+    def _recv_http(self,sock):
+        data=b''
+        nodata_num=0
+        while 1:
+            if nodata_num>15:#不得已
+                break
+            data_recv = sock.recv(self.buffer)
+            data+=data_recv
+            if b'\r\n\r\n' in data:#接收完成请求头
+                contenlen_index=data.find(b'Content-Length: ')
+                if contenlen_index==-1:
+                    if data[:3]==b'GET':
                         break
-                    data_recv=sock.recv(num-now_num)
-                    if data_recv==b'':break
-                    data+=data_recv
-                    now_num+=len(data_recv)
+                    elif b'Transfer-Encoding: chunked' in data:
+                        return self._recv_chunked(sock,data)
+                    else:
+                        time.sleep(0.1)
+                        continue
+                else:
+                    #正常接收http body
+                    tmp=data_recv[contenlen_index:]
+
+                    num=int(tmp.split(b'\r\n')[0][16:].decode('utf-8'))
+
+                    now_num=len(tmp.split(b'\r\n\r\n',maxsplit=1)[-1])
                     if num==now_num:
                         break
-                break
-            #self._bar.print(str(int((time.time()-s_time)*1000))+'ms')
-        #self._bar.print(str(int((time.time()-s_time)*1000))+'ms')
+                    while 1:
+                        data_recv=sock.recv(num-now_num)
+                        data+=data_recv
+                        now_num+=len(data_recv)
+                        if num==now_num:
+                            break
+                    break
+            else:
+                nodata_num+=1
+                continue
         return data
+            
+
 
 #响应信号
-def exit_server(signum, frame):
+def exit_server(signum, frame)->None:
     global F,bar
     if F._end_server==True:
         bar.print('[!]get muti stop signal, now force stop')
@@ -501,30 +588,40 @@ signal.signal(signal.SIGTERM, exit_server)
 
 def debug():
     global bar,F
-    bar=Pbar(info_len=50)
-    port_server=6789
-    host_forward='45.32.110.197'
-    port_forward=80
-    forwarder_num=2
+    bar=Pbar(speed=20,info_len=50)
+    port_server=8001
+    host_forward='192.168.8.203'
+    #host_forward='127.0.0.1'
+    port_forward=8001
+    forwarder_num=5
 
-    # func_file='z:\\cache\\a.py'
-    # outprocess_func='pout'
-    # inprocess_func='pin'
-    # outfunc=pyfunc_util(func_file,'def '+outprocess_func+'*:').get_func(outprocess_func)
-    # infunc=pyfunc_util(func_file,'def '+inprocess_func+'*:').get_func(inprocess_func)
+    func_file='./dynamic_replacement/login_live_com.py'
+    func_util=pyfunc_util(func_file,'def process_*:')
+    #outprocess_func='process_out'
+
+    #outfunc=pyfunc_util(func_file,'def '+outprocess_func+'*:').get_func(outprocess_func)
 
 
-    F=ProxyForward(host_forward=host_forward, port_forward=port_forward,port_server=port_server,bar=bar)
-    # F.set_out_processer(outfunc[3])
-    # F.set_in_processer(infunc[3])
+    F=ProxyForward(host_forward=host_forward, port_forward=port_forward,port_server=port_server,bar=None,debug=False)
 
-    F.server(forwarder_num=forwarder_num,waitting=True)
+    F.set_out_processer(func_util.get_func('process_out_head')[3],func_util.get_func('process_out_body')[3])
+    F.set_in_processer(func_util.get_func('process_in_head')[3],func_util.get_func('process_in_body')[3])
+
+    F.server(forwarder_num=forwarder_num,waitting=False)
+    F.waitting_server_end()
     #time.sleep(5)
     #F.end_server()
-    exit(1)
+    #exit(1)
+    
 
 
 if __name__ == "__main__":
+    #debug()
+
+    debug=False
+    if len(sys.argv)==2 and sys.argv[1]=='--debug':
+        print('[+]进入debug模式.将会实时输出数据')
+        debug=True
     #debug()
     bar=Pbar(info_len=50)
     print('[+]这是一个http代理服务器,可以自己增加对输入输出的请求进行处理的函数,ctrl+c结束程序')
@@ -533,6 +630,7 @@ if __name__ == "__main__":
         host_forward=input('转发目标ip:')
         port_forward=int(input('转发目标端口:').strip())
         forwarder_num=int(input('转发线程数:').strip())
+        codec=input('编码方式:').strip()
         func_file=input('存储处理函数的文件:')
         set_func=False
         if func_file!='':
@@ -549,11 +647,23 @@ if __name__ == "__main__":
         exit(0)
 
 
-
-    F=ProxyForward(host_forward=host_forward, port_forward=port_forward,port_server=port_server,bar=bar)
+    F=ProxyForward(host_forward=host_forward, port_forward=port_forward,port_server=port_server,bar=bar,debug=debug)
+    F.codec=codec
     if set_func:
-        F.set_out_processer(outfunc[3])
-        F.set_in_processer(infunc[3])
-    F.server(forwarder_num=forwarder_num,waitting=True)
+        F.set_out_processer(None,outfunc[3])
+        F.set_in_processer(None,infunc[3])
+    while 1:
+        try:
+            F.server(forwarder_num=forwarder_num,waitting=True)
+            break
+        except Exception as ex:
+
+            print('[!]error:'+str(ex))
+            i=input('[-]try again?').strip()
+            if i=='y' or i=='Y':
+                continue
+            if F._bar!=None:
+                F._bar.clear()
+            break
     #time.sleep(5)
     #F.end_server()

@@ -49,32 +49,29 @@ def inputargs():
 
 
 def update_db():
+    print('[+]获取数据库版本...')
+    web_ver=get_web_ver()
     if not os.path.exists('./Library/linux-soft-exploit-suggester/files_exploits.csv'):
         print('[!]未找到数据库...开始下载')
         url='https://raw.githubusercontent.com/offensive-security/exploit-database/master/files_exploits.csv'
         D=Aria2_Downloader('./Library/linux-soft-exploit-suggester')
         D.download(url,'files_exploits.csv')
-        set_locat_ver(get_web_ver())
+        set_locat_ver(web_ver)
         print('[+]下载数据库完成')
     else:
         print('[+]检查数据库更新...')
-        bar=Pbar()
-        bar.start_bar()
-        bar.set_rate(0,'检查更新中...')
-        if get_local_ver()<get_web_ver():
-            bar.print('[+]发现数据库更新')
-            bar.hidden(False)
+        if get_local_ver()<web_ver:
+            print('[+]发现数据库更新')
             del_db()
             url='https://raw.githubusercontent.com/offensive-security/exploit-database/master/files_exploits.csv'
             D=Aria2_Downloader('./Library/linux-soft-exploit-suggester')
             print('[+]开始下载最新数据库')
             D.download(url,'files_exploits.csv')
-            set_locat_ver(get_web_ver())
+            set_locat_ver(web_ver)
             print('[+]更新数据库完成')
         else:
-            bar.hidden(False)
             print('[+]未找到更新')
-        bar.clear()
+
 
 
 def del_db():
@@ -105,4 +102,6 @@ if __name__ == "__main__":
     banner()
     update_db()
     args=inputargs()
+    if args==None:
+        exit(1)
     run(args)
