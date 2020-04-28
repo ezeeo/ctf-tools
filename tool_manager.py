@@ -257,6 +257,8 @@ def check_file():
         print('info:Lack readme file->readme.txt')
     if not os.path.exists('pytools.bat'):
         print('info:Lack quick start file->pytools.bat')
+    if not os.path.exists('output'):
+        os.mkdir('output')
     return complete
 
 #------------------------------start------------------------------
