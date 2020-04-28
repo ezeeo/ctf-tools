@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 #version 1.0
-import os
+import os,sys
+if sys.platform=='linux':
+    import readline
 
 if __name__ == "__main__":
     while True:

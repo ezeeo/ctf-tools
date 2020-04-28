@@ -2,8 +2,9 @@
 #env .net4.0
 #version 1.0
 
-import os
-
+import os,sys
+if sys.platform=='linux':
+    import readline
 exe=os.path.abspath('.')+'/Library/bftools/bftools.exe'
 
 print('Braintools/bftools/图片隐写,用于解码图片中的brainfuck')

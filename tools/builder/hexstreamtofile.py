@@ -2,8 +2,9 @@
 #version 1.0
 import os
 import re
-import os
-
+import sys
+if sys.platform=='linux':
+    import readline
 def write(hexs):
     if len(hexs)%2!=0:
         hexs+='0'

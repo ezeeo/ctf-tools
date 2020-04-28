@@ -2,7 +2,9 @@
 #import PyExecJS
 #version 1.0
 import execjs
-import os
+import os,sys
+if sys.platform=='linux':
+    import readline
 path=os.path.abspath('.')+'/Library/jotherencode/jother-1.0.rc.js'
 
 def get_js():

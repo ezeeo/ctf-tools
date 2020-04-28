@@ -1,8 +1,10 @@
 #encoding:utf-8
 #version 1.0
 from zlib import *
-import os
-
+import os,sys
+if sys.platform=='linux':
+    import readline
+    
 def decompresszlib(file_path):
     if not os.path.exists(file_path):
         print('[!]file not exists')

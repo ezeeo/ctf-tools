@@ -4,6 +4,9 @@
 #version 1.0
 
 from __future__ import print_function
+import sys
+if sys.platform=='linux':
+    import readline
 
 def bf(src, left, right, data, idx):
     """

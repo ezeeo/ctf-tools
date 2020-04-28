@@ -4,6 +4,8 @@
 import execjs
 import sys
 import os
+if sys.platform=='linux':
+    import readline
 path=os.path.abspath('.')+'/Library/ppencode/ppencode.js'
 
 def get_js():

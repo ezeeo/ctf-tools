@@ -1,7 +1,9 @@
 #coding=utf-8
 #version 1.0
 import sys
-
+if sys.platform=='linux':
+    import readline
+    
 table='fZodR9XQDSUm21yCkr6zBqiveYah8bt4xsWpHnJE7jL5VG3guMTKNPAwcF'
 tr={}
 for i in range(58):

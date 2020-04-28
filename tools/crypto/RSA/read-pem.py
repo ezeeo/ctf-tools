@@ -3,7 +3,9 @@
 #version 1.2
 
 from Crypto.PublicKey import RSA
-import os
+import os,sys
+if sys.platform=='linux':
+    import readline
 
 print('此模块用于从RSA密钥文件中提取数据')
 pem=input('input a rsa file path:')

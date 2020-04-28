@@ -2,7 +2,9 @@
 #import Js2Py
 #version 1.0
 import js2py
-import os
+import os,sys
+if sys.platform=='linux':
+    import readline
 path=os.path.abspath('.')+'/Library/jj_and_aa/jjdecode.js'
 
 jsdata=open(path,'r',encoding= 'utf8').read()

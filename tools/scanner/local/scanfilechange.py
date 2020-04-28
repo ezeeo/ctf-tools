@@ -5,7 +5,9 @@ import hashlib
 import sys
 import shutil
 import time
-
+if sys.platform=='linux':
+    import readline
+    
 #文件索引
 def scan_files(directory,prefix=None,postfix=None):
     files_list=[]

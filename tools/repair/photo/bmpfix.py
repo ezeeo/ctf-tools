@@ -1,7 +1,8 @@
 #coding=utf-8
 #version 1.0
-import os
-
+import os,sys
+if sys.platform=='linux':
+    import readline
 
 def check(file_name):
     print('check file...',end='')

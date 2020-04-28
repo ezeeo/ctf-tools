@@ -1,6 +1,9 @@
 #coding=utf-8
 #version 1.1
 import sys
+if sys.platform=='linux':
+    import readline
+    
 def encode(s):
     return ' '.join([expansion(bin(ord(c)).replace('0b', '')) for c in s])
 def expansion(s):

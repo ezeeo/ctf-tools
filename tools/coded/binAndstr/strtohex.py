@@ -1,7 +1,9 @@
 #coding=utf-8
 #version 1.1
 import sys
-
+if sys.platform=='linux':
+    import readline
+    
 def expansion(s):
     if len(s)==1:
         return '0'+s

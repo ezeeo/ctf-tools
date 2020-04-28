@@ -1,9 +1,10 @@
 #coding=utf-8
 #version 1.2
-import os
+import os,sys
 import json
 import string
-
+if sys.platform=='linux':
+    import readline
 
 def read_req(file_path):
     first_line=''#最终结果

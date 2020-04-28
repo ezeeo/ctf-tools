@@ -1,8 +1,9 @@
 #coding=utf-8
 #version 1.0
 
-import os,time
-
+import os,time,sys
+if sys.platform=='linux':
+    import readline
 base_path=os.path.abspath('.')+'/output/runhtml/'
 
 def create_tmp_path():

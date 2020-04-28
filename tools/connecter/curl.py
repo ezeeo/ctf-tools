@@ -2,7 +2,9 @@
 #version 1.1
 
 import os,sys
-
+if sys.platform=='linux':
+    import readline
+    
 def init_curl():
     if sys.platform=='win32':
         path='./Library/abuse-ssl-bypass-waf/curl/I386/CURL.EXE'

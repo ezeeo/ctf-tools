@@ -1,7 +1,8 @@
 #version 1.3
 import base64
 import sys
-
+if sys.platform=='linux':
+    import readline
 
 
 if len(sys.argv)==2:#传入数据

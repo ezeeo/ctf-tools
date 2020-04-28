@@ -1,6 +1,9 @@
 #coding:utf-8
 #version 1.1
-import base64
+import base64,sys
+if sys.platform=='linux':
+    import readline
+    
 while True:
     data=input('base16decode>')
     if data=='exit()':

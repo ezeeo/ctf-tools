@@ -3,6 +3,8 @@
 import sys
 import os
 from enum import Enum
+if sys.platform=='linux':
+    import readline
 
 from Library.utils.file_scanner import scan_files
 from Library.utils.file_input import inputfile
@@ -14,7 +16,7 @@ from Library.utils.pbar import Pbar
 from Library.utils.run_sys_agent import agent_system
 
 
-version='0.75'
+version='0.76'
 pypath='python'
 
 def init_pyenv():
@@ -212,9 +214,12 @@ def show(argv,tool_list):
         print('install_module->',end='')
         sys.stdout.flush()
         os.system(pypath+' ./install_module.py version')
-        print('installer->',end='')
-        sys.stdout.flush()
-        os.system('installer.exe version')
+        if check_use_net():
+            print('installer->',end='')
+            sys.stdout.flush()
+            os.system('installer.exe version')
+        else:
+            print('installer->?(disable net)')
         f=open('pytools.bat','r',encoding='utf-8')
         line=f.readline()
         f.close()

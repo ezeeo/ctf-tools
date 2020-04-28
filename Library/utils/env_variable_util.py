@@ -154,9 +154,13 @@ class ENVIRONMENT_VARIABLE_UTIL:
             return self._slow_get_abspath(s)
 
 
-    
-
-
+    def getall(self):
+        result={}
+        while not self._indexing_down_get():
+            time.sleep(0.0001)
+        for s in self._bname_dict.keys():
+            result[s]=self.get_abspath(s)
+        return result
 
 if __name__ == "__main__":
     E=ENVIRONMENT_VARIABLE_UTIL(show_bar=False)

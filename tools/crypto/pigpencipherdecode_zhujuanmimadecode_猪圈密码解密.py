@@ -1,5 +1,9 @@
 #coding=utf-8
 #version 1.0
+import sys
+if sys.platform=='linux':
+    import readline
+
 table = {
 'a':'j','b':'k','c':'l','d':'m','e':'n','f':'o','g':'p','h':'q','i':'r','j':'a','k':'b',
 'l':'c','m':'d','n':'e','o':'f','p':'g','q':'h','r':'i','s':'w','t':'x','u':'y','v':'z',

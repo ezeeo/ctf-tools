@@ -1,6 +1,8 @@
 #coding=utf-8
 #version 1.0
-
+import sys
+if sys.platform=='linux':
+    import readline
 #strtobin
 def binencode(s):
     return ' '.join([expansion(bin(ord(c)).replace('0b', '')) for c in s])

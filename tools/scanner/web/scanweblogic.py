@@ -3,11 +3,12 @@
 #import certifi
 #import chardet
 #import idna
-#import urllib3
 #import requests
 import sys
 import os
 import shutil
+if sys.platform=='linux':
+    import readline
 path=os.path.abspath('.')
 if 'tools' in path.replace('\\','/').split('/'):
     path=path.split('tools',maxsplit=1)[0]+'Library/utils'

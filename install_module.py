@@ -14,7 +14,7 @@ from Library.utils.pbar import Pbar
 from Library.utils.start_py_env import read_pyenv
 from Library.utils.file_scanner import scan_files
 
-version='1.4'
+version='1.5'
 pypath='python'
 
 try:
@@ -56,7 +56,14 @@ def should_install_modules(module_list):#需要安装的
     for i in module_list:
         if i not in modules:
             should.append(i)
-    return should
+    #real check
+    result=[]
+    for i in should:
+        try:
+            exec('import '+i)
+        except Exception as ex:
+            result.append(i)
+    return result
 
 def auto_install(module_list,confirm):#安装
     for mo in module_list:
@@ -138,6 +145,8 @@ def bar_status():
 if __name__ =='__main__':
     pypath=read_pyenv()
     if pypath==False:pypath='python'
+    if sys.argv[1]!='version':
+        print('pypath:'+pypath)
     if len(sys.argv)==1:
         default(False)
     elif sys.argv[1]=='version':

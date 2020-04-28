@@ -1,7 +1,9 @@
 #coding=utf-8
 #version 1.1
 import sys
-
+if sys.platform=='linux':
+    import readline
+    
 base="+-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 
 #strtobin

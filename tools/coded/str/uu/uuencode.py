@@ -1,5 +1,8 @@
 #coding=utf-8
 #version 1.0
+import sys
+if sys.platform=='linux':
+    import readline
 
 #strtobin
 def binencode(s):

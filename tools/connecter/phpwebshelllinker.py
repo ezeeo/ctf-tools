@@ -2,7 +2,9 @@
 #version 1.1
 import requests
 import sys
-
+if sys.platform=='linux':
+    import readline
+    
 if len(sys.argv)==3:
     url=sys.argv[1]
     password=sys.argv[2]

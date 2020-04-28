@@ -4,7 +4,8 @@
 import execjs
 import sys
 import os
-
+if sys.platform=='linux':
+    import readline
 def get_jscode(inp):
     if os.path.exists(inp):
         with open(inp,'r',encoding='utf-8') as f:

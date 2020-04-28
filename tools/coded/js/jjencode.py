@@ -4,6 +4,8 @@
 import execjs
 import sys
 import os
+if sys.platform=='linux':
+    import readline
 path=os.path.abspath('.')+'/Library/jj_and_aa/jjencode.js'
 
 def get_js():

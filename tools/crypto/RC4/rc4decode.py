@@ -2,7 +2,9 @@
 #version 1.0
 import base64
 from hashlib import md5,sha1
-
+import sys
+if sys.platform=='linux':
+    import readline
 def rc4(text, key = 'default-key', mode = "decode"):
     if mode == "decode":
         text = base64.b64decode(text)   #去除base64

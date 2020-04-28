@@ -4,7 +4,8 @@ import sys
 import os
 import shutil
 import datetime
-
+if sys.platform=='linux':
+    import readline
 path=os.path.abspath('.')
 if 'tools' in path.replace('\\','/').split('/'):
     path=path.split('tools',maxsplit=1)[0]+'Library/utils'

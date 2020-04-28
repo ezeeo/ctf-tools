@@ -1,6 +1,9 @@
 #coding=utf-8
 #version 1.2
 import sys
+if sys.platform=='linux':
+    import readline
+    
 def decode(s):
     return ''.join([chr(i) for i in [int(b, 2) for b in s.split(' ')]])
 def addspace(s):

@@ -1,8 +1,10 @@
 #coding=utf-8
-#version 1.3
+#version 1.4
 
 import os,sys,time
 import threading
+if sys.platform=='linux':
+    import readline
 path=os.path.abspath('.')
 if 'tools' in path.replace('\\','/').split('/'):#这里是为了便于开发调试
     path=path.split('tools',maxsplit=1)[0]+'Library/utils'
@@ -50,7 +52,7 @@ def fake_delay_bar(bar,t=10,info=''):
 
 
 if __name__ == "__main__":
-    b=Pbar(speed=15,)
+    b=Pbar(speed=15,info_len=20,bar_len=50)
     b.start_bar()
     fake_delay_bar(b,30,'正在获取ip...')
     ip=get_router_ip()
@@ -70,17 +72,39 @@ if __name__ == "__main__":
     R=NoRootIPdelayMonitor('www.baidu.com')
     L.start_monitor()
     R.start_monitor()
+    max_delay=100
+    max_time=0
+    normal_time=0
+    loop_time=0
     try:
 
         while 1:
+            b.set_bar_moving('<={}=>'.format(loop_time))
             ld=L.get_delay()
             rd=R.get_delay()
             if ld==-1 or rd==-1:
                 b.print('[!]network error on {} | {}ms|{}ms'.format(time.asctime(time.localtime(time.time())),ld,rd))
-            if rd==-1:
+            loop_time+=1
+            if ld>max_delay:
+                max_time+=1
+            if max_time>3:
+                max_time=0
+                max_delay*=2
+            if ld<max_delay//2:
+                normal_time+=1
+            if normal_time>10:
+                normal_time=0
+                max_delay=max_delay//2
+                if max_delay<5:
+                    max_delay=5
+            if loop_time>20:
+                max_time=0
+                normal_time=0
+                loop_time=0
+            if ld==-1:
                 b.set_rate(100,'{}ms|{}ms'.format(ld,rd))
             else:
-                b.set_rate(int(rd/10),'{}ms|{}ms'.format(ld,rd))
+                b.set_rate(int(ld*100/max_delay),'{}ms|{}ms|max={}'.format(ld,rd,max_delay))
             time.sleep(0.5)
     except KeyboardInterrupt as ex:
         L.end_monitor()

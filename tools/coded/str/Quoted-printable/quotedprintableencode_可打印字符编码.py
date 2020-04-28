@@ -2,7 +2,9 @@
 #version 1.0
 import quopri
 import sys
-
+if sys.platform=='linux':
+    import readline
+    
 if len(sys.argv)==2:
     s=sys.argv[1]
     print()

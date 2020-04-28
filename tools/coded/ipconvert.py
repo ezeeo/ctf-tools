@@ -2,7 +2,9 @@
 #version 1.2
 
 import sys
-
+if sys.platform=='linux':
+    import readline
+    
 def tab_to_8(binip):
     if len(binip)>8:
         raise Exception('lenth error')

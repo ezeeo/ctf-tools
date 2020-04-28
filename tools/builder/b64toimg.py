@@ -3,7 +3,9 @@
 import os
 import base64   
 import sys
-
+if sys.platform=='linux':
+    import readline
+    
 def get(instr):
     if os.path.exists(instr):
         f=open(instr,'r',encoding='utf-8')

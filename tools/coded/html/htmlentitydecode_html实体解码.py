@@ -1,6 +1,7 @@
 #version 1.0
-import html
-
+import html,sys
+if sys.platform=='linux':
+    import readline
 def htmlunescape(s):
     return(html.unescape(s))
 

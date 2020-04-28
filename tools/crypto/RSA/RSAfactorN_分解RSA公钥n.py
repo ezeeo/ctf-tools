@@ -4,6 +4,8 @@
 
 import requests
 import os,sys
+if sys.platform=='linux':
+    import readline
 path=os.path.abspath('.')
 if 'tools' in path.replace('\\','/').split('/'):#这里是为了便于开发调试
     path=path.split('tools',maxsplit=1)[0]+'Library/utils'

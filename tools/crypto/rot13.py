@@ -1,5 +1,9 @@
 #coding=utf-8
 #version 1.0
+import sys
+if sys.platform=='linux':
+    import readline
+
 def rot13(message):
     first = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
     trance = 'NOPQRSTUVWXYZABCDEFGHIJKLMnopqrstuvwxyzabcdefghijklm'
