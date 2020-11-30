@@ -21,6 +21,7 @@ expsuggesterpy='./Library/linux-soft-exploit-suggester/linux-soft-exploit-sugges
 
 from download_util import Aria2_Downloader
 from pbar import Pbar
+from auto_input import autokbex_input
 
 def run(args):
     os.system(pyenv+' '+expsuggesterpy+' '+args)
@@ -34,13 +35,8 @@ redhat/centos: rpm -qa > package_list'''
     print('[+]首先需要'+a)
 
 
-def withexit_input(s):
-    data=input(s).strip()
-    if data=='exit()':exit(0)
-    return data
-
 def inputargs():
-    softlist_path=withexit_input('软件包列表文件路径:')
+    softlist_path=autokbex_input('软件包列表文件路径:')
     if not os.path.exists(softlist_path):
         print('[+]错误:文件不存在')
         return

@@ -1,4 +1,5 @@
 #扫描py文件,根据匹配规则获取其中的函数以及调用方式
+#2020.5.29-修复传参bug,精简代码,加入索引
 
 #鸡贼的获取变量名的字符串https://www.zhihu.com/question/42768955#
 # import re
@@ -15,19 +16,24 @@
 
 import os,sys
 
-path=os.path.abspath('.')
-if 'tools' in path.replace('\\','/').split('/'):#这里是为了便于开发调试
-    path=path.split('tools',maxsplit=1)[0]+'Library/utils'
-else:
-    path=path+'/Library/utils'
-if not path in (p.replace('\\','/') for p in sys.path):
-    sys.path.append(path)
+try:
+    from .matcher import Matcher
+    from .init_arg_checker import check_init_arg
+except ImportError as ex:
+
+    path=os.path.abspath('.')
+    if 'tools' in path.replace('\\','/').split('/'):#这里是为了便于开发调试
+        path=path.split('tools',maxsplit=1)[0]+'Library/utils'
+    else:
+        path=path+'/Library/utils'
+    if not path in (p.replace('\\','/') for p in sys.path):
+        sys.path.append(path)
+    from matcher import Matcher
+    from init_arg_checker import check_init_arg
 
 
-from matcher import Matcher
 class pyfunc_scanner:
     def __init__(self,file_path):
-        from init_arg_checker import check_init_arg
 
         self._file_path=file_path
 
@@ -37,7 +43,8 @@ class pyfunc_scanner:
 
 
     def _check_file_path(self,_file_path):
-        if os.path.exists(_file_path) and os.path.isfile(_file_path):return True
+        if os.path.exists(_file_path) and os.path.isfile(_file_path):
+            return True
         return False
 
 
@@ -124,7 +131,7 @@ class pyfunc_scanner:
 
 class pyfunc_loader:
     def __init__(self,file_path,func_list):
-        from init_arg_checker import check_init_arg
+
 
         self._file_path=file_path
         self._func_list=func_list
@@ -133,7 +140,6 @@ class pyfunc_loader:
             raise Exception('[!]error:参数检测不通过')
         
         
-
     def _check_file_path(self,_file_path):
         if os.path.exists(_file_path) and os.path.isfile(_file_path):
             self._file_name=os.path.split(self._file_path)[1]
@@ -161,21 +167,14 @@ class pyfunc_loader:
         return R
 
 class pyfunc_runner:
-    def __init__(self,file_path,func_list):
-        from init_arg_checker import check_init_arg
+    def __init__(self,func_list):
 
-        self._file_path=file_path
         self._func_list=func_list
+        self._func_index={}#索引，避免每次都遍历list
 
         if not check_init_arg(self):
             raise Exception('[!]error:参数检测不通过')
-
-    def _check_file_path(self,_file_path):
-        if os.path.exists(_file_path) and os.path.isfile(_file_path):
-            self._file_name=os.path.split(self._file_path)[1]
-            self._file_path=os.path.split(self._file_path)[0]
-            return True
-        return False
+        self._build_func_index()
 
 
     def _check_func_list(self,_func_list):
@@ -185,40 +184,37 @@ class pyfunc_runner:
             if len(i)!=4:return False
         return True
 
+    def _build_func_index(self):
+        for index,func in enumerate(self._func_list):
+            self._func_index[func[0]]=index
+
     def _find_func(self,funcname):
-        func=None
-        for f in self._func_list:
-            if funcname==f[0]:
-                func=f
-                break
-        if func==None:
+        if funcname not in self._func_index:
             raise Exception('无此函数')
-        return func
+        return self._func_list[self._func_index[funcname]]
 
     def _get_run_arg(self,funcname,kargs):
         func=self._find_func(funcname)
-        args=[]
+        args={}
         for a in func[1]:
             if a in kargs.keys():
-                if isinstance(kargs[a],str):
-                    args.append(a+"='"+kargs[a]+"'")
-                else:
-                    args.append(a+"="+str(kargs[a]))
+                args[a]=kargs[a]
         if len(args)!=len(func[1]):
             return (False,args)
         else:return (True,args)
         
     def _completion_input(self,funcname,args):
         func=self._find_func(funcname)
+        r=args.copy()
         for k in func[1]:
-            if k not in [a.split('=',maxsplit=1)[0] for a in args]:
+            if k not in args.keys():
                 #需要输入
                 c=input('输入缺少的参数->'+k+':')
                 if c.isdigit():
-                    args.append(k+"="+c)
+                    r[k]=int(c)
                 else:
-                    args.append(k+"='"+c+"'")
-        return args
+                    r[k]=c
+        return r
 
 
 
@@ -232,23 +228,28 @@ class pyfunc_runner:
             raise Exception('参数不匹配'+tuple(r[1])+'!='+kargs.keys())
         #运行
         func=self._find_func(funcname)
-        return eval("func[3]("+','.join(r)+")")
+        return eval("func[3](**r)")
 
 
 
 class pyfunc_util:
-    def __init__(self,file_path,pattren):
+    def __init__(self,file_path,pattren,tolerant=False):
+        '''tolerant标记是否允许前后的空格'''
         self._S=pyfunc_scanner(file_path)
-        self._Funcs3=self._S.scan_func(pattren,False)
+        self._Funcs3=self._S.scan_func(pattren,tolerant)
         self._L=pyfunc_loader(file_path,self._Funcs3)
         self._Funcs4=self._L.load()
-        self._R=pyfunc_runner(file_path,self._Funcs4)
+        self._R=pyfunc_runner(self._Funcs4)
 
     def run(self,funcname,completion_input=True,**kargs):
         return self._R.run(funcname,completion_input,**kargs)
 
     def get_func(self,funcname):
-        return self._R._find_func(funcname)
+        try:
+            return self._R._find_func(funcname)
+        except Exception as ex:
+            pass
+        
 
     def get_funclist(self):
         return self._Funcs3
@@ -256,7 +257,7 @@ class pyfunc_util:
 if __name__ == "__main__":
     #S=pyfunc_scanner('D:\\ctf-tool\\Library\\createaword\\jspcreater.py')
     #S.scan_func('def jsp_*(*)*:',False)
-    p='..\\createaword\\phpcreater.py'
+    p='G:\\python\\tool_manager\\Library\\createaword\\phpcreater.py'
     # S=pyfunc_scanner(p)
     # s=S.scan_func('def php_*(*)*:',False)
 
@@ -267,5 +268,9 @@ if __name__ == "__main__":
 
     # R=pyfunc_runner(p,F)
     # print(R.run('php_guogou',pwd='c'))
+
+
     p=pyfunc_util(p,'def php_*(*)*:')
     print(p.run('php_muti_base64',pwd='cccccccc',num=4))
+
+

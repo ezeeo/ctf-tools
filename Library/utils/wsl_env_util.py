@@ -8,12 +8,9 @@ class WSL_ENV_CL:
 
     def __init__(self):
         if not self._check_os():
-            print('[!]错误,系统类型不符合要求')
-            print('[+]必须是win10或linux')
-            exit(1)
+            raise Exception('os type error,must win10 or linux')
         if not self._check_bash():
-            print('[!]错误:未检测到bash')
-            exit(1)
+            raise Exception('bash not found')
 
 
     def get_bashenv(self):
@@ -28,7 +25,10 @@ class WSL_ENV_CL:
 
     def _check_bash(self):
         '''检查bash是否正常'''
-        s=subprocess.Popen(["bash","--version"],bufsize=0,stdout=subprocess.PIPE,universal_newlines=True)
+        try:
+            s=subprocess.Popen(["bash","--version"],bufsize=0,stdout=subprocess.PIPE,universal_newlines=True)
+        except:
+            return False
         result=''
         while True:
             nextline=s.stdout.readline().strip()

@@ -4,17 +4,21 @@ import configparser
 import subprocess
 import json
 
-
 try:
-    from matcher import Matcher
-    from pbar import Pbar
-except Exception as identifier:
-    path=os.path.dirname( __file__)
+    from .matcher import Matcher
+    from .pbar import Pbar
+    from .run_sys_agent import agent_system
+except ImportError as ex:
+    path=os.path.abspath('.')
+    if 'tools' in path.replace('\\','/').split('/'):#这里是为了便于开发调试
+        path=path.split('tools',maxsplit=1)[0]+'Library/utils'
+    else:
+        path=path+'/Library/utils'
     if not path in (p.replace('\\','/') for p in sys.path):
         sys.path.append(path)
     from matcher import Matcher
     from pbar import Pbar
-
+    from run_sys_agent import agent_system
 
 
 class PY_ENV_CL:
@@ -111,18 +115,21 @@ class PY_ENV_CL:
             if 'python{}'.format(self._py_ver) in p or 'Python{}'.format(self._py_ver) in p:
                 return True
         #检查可执行性
-        p = subprocess.Popen([path,'--version'], shell=True,stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        data=[]
-        while True:
-            d=p.stdout.readline()
-            if not d:
-                break
-            data.append(d)
+        # p = subprocess.Popen([path,'--version'], shell=True,stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        # data=[]
+        # while True:
+        #     d=p.stdout.readline()
+        #     if not d:
+        #         break
+        #     data.append(d)
         
-        p.stdout.close()
-        p.wait()
+        # p.stdout.close()
+        # p.wait()
+        code,r,e=agent_system(path+' --version',' ',True)
+        if code!=0:
+            return False
         #os.waitpid(p.pid, 0)
-        if b'\n'.join(data).startswith('Python {}'.format(self._py_ver).encode('utf-8')):
+        if r.startswith('Python {}'.format(self._py_ver)):
             return True
         #检查文件
         abs_path=os.path.abspath(path)

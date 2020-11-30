@@ -1,17 +1,23 @@
 import os
 import sys
 
-path=os.path.abspath('.')
-if 'tools' in path.replace('\\','/').split('/'):#这里是为了便于开发调试
-    path=path.split('tools',maxsplit=1)[0]+'Library/utils'
-else:
-    path=path+'/Library/utils'
-if not path in (p.replace('\\','/') for p in sys.path):
-    sys.path.append(path)
 
-from thread_safe_access_inject import inject_get_set
-from value_snapshot import value_snapshot,value_rollback
-from auto_decoder import auto_decode
+try:
+    from .thread_safe_access_inject import inject_get_set
+    from .value_snapshot import value_snapshot,value_rollback
+    from .auto_decoder import auto_decode
+except ImportError as ex:
+    path=os.path.abspath('.')
+    if 'tools' in path.replace('\\','/').split('/'):#这里是为了便于开发调试
+        path=path.split('tools',maxsplit=1)[0]+'Library/utils'
+    else:
+        path=path+'/Library/utils'
+    if not path in (p.replace('\\','/') for p in sys.path):
+        sys.path.append(path)
+    from thread_safe_access_inject import inject_get_set
+    from value_snapshot import value_snapshot,value_rollback
+    from auto_decoder import auto_decode
+
 import threading
 import subprocess
 import time
@@ -51,6 +57,8 @@ class NoRootIPdelayMonitor:
         self._ping_process=subs
 
     def _parse_ping_line(self,line:str):
+        if '<1ms' in line:
+            return 0
         return int(line.strip().split(' ')[-2].split('=')[1][:-2])
 
 

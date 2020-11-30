@@ -49,22 +49,27 @@ import time
 #bar.set_rate(60)
 #即可看到进度从0走到60
 
-
-path=os.path.abspath('.')
-if 'tools' in path.replace('\\','/').split('/'):#这里是为了便于开发调试
-    path=path.split('tools',maxsplit=1)[0]+'Library/utils'
-else:
-    path=path+'/Library/utils'
-if not path in (p.replace('\\','/') for p in sys.path):
-    sys.path.append(path)
-from thread_safe_access_inject import inject_get_set
-from value_snapshot import value_snapshot,value_rollback
+try:
+    from .thread_safe_access_inject import inject_get_set
+    from .value_snapshot import value_snapshot,value_rollback
+except ImportError as ex:
+    path=os.path.abspath('.')
+    if 'tools' in path.replace('\\','/').split('/'):#这里是为了便于开发调试
+        path=path.split('tools',maxsplit=1)[0]+'Library/utils'
+    else:
+        path=path+'/Library/utils'
+    if not path in (p.replace('\\','/') for p in sys.path):
+        sys.path.append(path)
+    from thread_safe_access_inject import inject_get_set
+    from value_snapshot import value_snapshot,value_rollback
 
 
 class Pbar:
     '''提供进度条功能，可设置宽度，提示信息，帧率填充等等'''
     def __init__(self,speed=15,info_speed=1,bar_len='Auto',info_len='Auto',bar_fill='#',bar_moving='<=-=>',move_mode='lr',show_percent_num=False,smooth=True,allow_skip_frame=True,vsync=True,auto_off=True):
         '''smooth即平滑模式，设定一个进度向另一个进度切换时是否平滑，allow_skip_frame标志是否允许跳过平滑帧'''
+        self._is_start=False
+        
         self._fps=speed
         self._info_fps=info_speed#info的fps
         self._bar_len=bar_len
@@ -103,10 +108,10 @@ class Pbar:
         self._bar_template=None#进度条模板
         self._set_show_template()
 
-        self._now_fill_num=0#进度条值(0-self._bar_len)
+        self._now_fill_num=0#进度条填充值(0到self._bar_len)
         self._now_str_info=''#显示的信息
         self._tmp_frame=''#缓存帧
-        self._now_rate=0#当前百分比
+        self._now_rate=0#当前百分比(是用户设置的值,在启用平滑时不一定等于显示的值)
 
 
         self._last_event_time=0#上次处理event用时
@@ -116,7 +121,7 @@ class Pbar:
 
 
         self._event_thread=threading.Thread(target=self._event_loop)
-        self._is_start=False
+        
 
 
         self._hidden=False#是否隐藏进度条的显示(print以及控制操作依然可用)
@@ -220,10 +225,10 @@ class Pbar:
         if self._bar_len=='Auto' and self._info_len=='Auto':
             if self._terminal_size.columns>=130:
                 self._bar_len=100
-                self._info_len=20
+                self._info_len=21
             elif self._terminal_size.columns>=80:
                 self._bar_len=50
-                self._info_len=20
+                self._info_len=21
             else:
                 self._info_len=10
                 self._bar_len=self._terminal_size.columns-self._info_len
@@ -636,11 +641,14 @@ if __name__ == "__main__":
 
 
     #bar=Pbar(speed=15,bar_len=100,info_len=30,bar_fill='#',bar_moving='<=-=>',move_mode='lr',show_percent_num=True,smooth=True,allow_skip_frame=False,vsync=True)
-    bar=Pbar(speed=15,bar_len=4,info_len=30,bar_fill='#',bar_moving='',move_mode='lr',show_percent_num=True,smooth=False,allow_skip_frame=True,vsync=False)
+    bar=Pbar(speed=5,bar_len=100,info_len=30,bar_fill='#',bar_moving='',move_mode='lr',show_percent_num=True,smooth=True,allow_skip_frame=True,vsync=True)
 
     bar.start_bar()
     fills='0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~'
-    bar.set_rate(0,fills)
+    bar.set_rate(100,fills)
+    while 1:
+        bar.print(str(bar._now_rate_get()))
+        time.sleep(1)
     # while 1:
     #     for i in range(101):
     #         bar.set_rate(i)

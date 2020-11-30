@@ -1,5 +1,6 @@
 #coding=utf-8
 #version 1.1
+#import psutil
 
 import os,sys,time
 import threading

@@ -4,14 +4,23 @@ import requests
 import sys
 if sys.platform=='linux':
     import readline
-    
+path=os.path.abspath('.')
+if 'tools' in path.replace('\\','/').split('/'):#这里是为了便于开发调试
+    path=path.split('tools',maxsplit=1)[0]+'Library/utils'
+else:
+    path=path+'/Library/utils'
+if not path in (p.replace('\\','/') for p in sys.path):
+    sys.path.append(path)
+
+from auto_input import autokbex_input
+
 if len(sys.argv)==3:
     url=sys.argv[1]
     password=sys.argv[2]
 else:
-    url = input('webshell_address:')
+    url = autokbex_input('webshell_address:')
     if url=='exit()':exit(0)
-    password=input('webshell_password:')
+    password=autokbex_input('webshell_password:')
     if password=='exit()':exit(0)
 print('注意:\ncd 只能单独执行\n不会提示目录不存在')
 print('------------start------------')
@@ -68,7 +77,7 @@ while True:
         who='#'+who
     else:
         who='$'+who
-    code=input(who+' >')
+    code=autokbex_input(who+' >')
     if code=='exit()':
         break
     

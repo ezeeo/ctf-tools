@@ -15,7 +15,7 @@ def read_req(file_path):
     cookies={}#cookies
     req_body={}#请求体
     req_methods={'GET':'get','POST':'post','PUT':'put','DELETE':'delete','HEAD':'head','OPTIONS':'options','TRACE':'trace','CONNECT':'connect'}
-    req_all_headers=['Accept','Accept-Charset','Accept-Encoding','Accept-Language','Accept-Ranges','Authorization','Cache-Control','Connection','Content-Length','Content-Type','Date','Expect','From','Host','If-Match','If-Modified-Since','If-None-Match','If-Range','If-Unmodified-Since','Max-Forwards','Pragma','Proxy-Authorization','Range','Referer','TE','Upgrade','User-Agent','Via','Warning','Origin']
+    req_all_headers=['Accept','Accept-Charset','Accept-Encoding','Accept-Language','Accept-Ranges','Authorization','Cache-Control','Connection','Content-Length','Content-Type','Date','Expect','From','Host','If-Match','If-Modified-Since','If-None-Match','If-Range','If-Unmodified-Since','Max-Forwards','Pragma','Proxy-Authorization','Range','Referer','TE','Upgrade','User-Agent','Via','Warning','Origin','X-Requested-With','Sec-Fetch-Site','Sec-Fetch-Mode']
     chrome_headers=['Upgrade-Insecure-Requests']
     if not os.path.exists(file_path):
         print('[!]file error:file not exists - '+file_path)
@@ -95,7 +95,7 @@ def read_req(file_path):
             else:
                 num+=1
             continue
-        line=raw_line.split(':')
+        line=raw_line.split(':',maxsplit=1)
         header[line[0]]=line[1].strip()
 
         txt.remove(raw_line)

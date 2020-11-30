@@ -1,6 +1,7 @@
 #coding=utf-8
 import os
 import sys
+import time
 try:
     import pip
 except:
@@ -14,14 +15,9 @@ from Library.utils.pbar import Pbar
 from Library.utils.start_py_env import read_pyenv
 from Library.utils.file_scanner import scan_files
 
-version='1.5'
+version='1.6'
 pypath='python'
 
-try:
-    from pip._internal.utils.misc import get_installed_distributions
-except:
-    print('error in install : pip version must>10')
-    exit()
 
 def scan():#扫描存在的文件
     return scan_files('./tools/',postfix=".py")
@@ -30,6 +26,7 @@ def requisite_pip_module():#请求安装的
     result=['fuzzywuzzy','python-Levenshtein']
     if sys.platform=='linux':
         result.append('readline')
+
     for path in file_list:
         f = open(path, 'r',encoding='UTF-8')
         while True:
@@ -45,15 +42,26 @@ def requisite_pip_module():#请求安装的
         f.close()
     return list(set(result))
 
-def should_install_modules(module_list):#需要安装的
-    
+def should_install_modules(module_list,bar=None):#需要安装的
+    if bar!=None:
+        max_rate=100-bar._now_rate_get()
+        base_rate=bar._now_rate_get()
+    try:
+        from pip._internal.utils.misc import get_installed_distributions
+    except:
+        print('error in install : pip version must>10')
+        exit()
+
     mo=get_installed_distributions()
     modules=[]
     for i in mo:
         modules.append(str(i).split(' ')[0])
     #print(modules)
     should=[]
-    for i in module_list:
+    for index,i in enumerate(module_list):
+        if bar!=None:
+            a=base_rate+int(index+1)/(len(module_list)+1)*max_rate
+            bar.set_rate(a,'checking lib...{}/{}'.format(index,len(module_list)+1))
         if i not in modules:
             should.append(i)
     #real check
@@ -119,21 +127,22 @@ def withupdatepip():
 
 
 def bar_status():
-    bar=Pbar(speed=30,bar_fill='#',bar_moving='<=-=>',move_mode='lr',smooth=True,allow_skip_frame=True)
+    bar=Pbar(speed=30,bar_fill='#',bar_moving='<=-=>',move_mode='lr',smooth=True,allow_skip_frame=False)
     bar.start_bar()
-    bar.set_rate(None,'get pip list...')
-
+    bar.set_rate(50,'get requisite package')
     li=requisite_pip_module()
     all_num=len(li)
-    li=should_install_modules(li)
+    bar.set_rate(99,'get installed package')
+    li=should_install_modules(li,bar)
     should_down_num=len(li)
 
-    for i in range(1,all_num+1):
+    # for i in range(1,all_num+1):
 
-        #bar.set_speed((100-i)//3+60)
-        bar.set_rate(int(i/all_num*100),'checking lib...{}/{}'.format(i,all_num+1))
+    #     #bar.set_speed((100-i)//3+60)
+    #     bar.set_rate(int(i/all_num*100),'checking lib...{}/{}'.format(i,all_num+1))
 
     if len(li)==0:
+        #bar.set_speed(60)
         bar.set_rate(100,'lib check pass')
     else:
         bar.set_rate(None,'lib check fail')
@@ -145,7 +154,7 @@ def bar_status():
 if __name__ =='__main__':
     pypath=read_pyenv()
     if pypath==False:pypath='python'
-    if sys.argv[1]!='version':
+    if len(sys.argv)==2 and sys.argv[1]!='version':
         print('pypath:'+pypath)
     if len(sys.argv)==1:
         default(False)

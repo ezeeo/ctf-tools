@@ -1,8 +1,8 @@
 #向类中注入线程安全访问变量的方法(_get,_set)(仅下划线开头的变量)
 
 
-def inject_get_set(self,Lock_name='_Lock',get_pattern='{}_get',set_pattern='{}_set',cover=False):
-    '''向类中注入线程安全访问变量的方法(_get,_set)(仅下划线开头的变量),Lock_name表示希望Lock对象的名称,pattern表示getset方法的名称模板,{}部分表示原始变量名,cover表示遇到冲突时是否覆盖'''
+def inject_get_set(self,Lock_name='_Lock',get_pattern='{}_get',set_pattern='{}_set',cover=False,var=None):
+    '''向类中注入线程安全访问变量的方法(_get,_set)(仅下划线开头的变量),Lock_name表示希望Lock对象的名称,pattern表示getset方法的名称模板,{}部分表示原始变量名,cover表示遇到冲突时是否覆盖,var表示针对的变量'''
     L=self.__dir__()
     R=[]
     #过滤
@@ -15,6 +15,14 @@ def inject_get_set(self,Lock_name='_Lock',get_pattern='{}_get',set_pattern='{}_s
         if not callable(eval('self.'+l)):
             L.append(l)
 
+    #过滤掉不在表里的
+    if var!=None:
+        R=[]
+        for l in L:
+            if l in var:
+                R.append(l)
+        L=R
+        
     import threading
     exec('self.'+Lock_name+'=threading.Lock()')
 

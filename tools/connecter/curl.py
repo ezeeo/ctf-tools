@@ -4,7 +4,19 @@
 import os,sys
 if sys.platform=='linux':
     import readline
-    
+
+
+path=os.path.abspath('.')
+if 'tools' in path.replace('\\','/').split('/'):#这里是为了便于开发调试
+    path=path.split('tools',maxsplit=1)[0]+'Library/utils'
+else:
+    path=path+'/Library/utils'
+if not path in (p.replace('\\','/') for p in sys.path):
+    sys.path.append(path)
+
+from auto_input import autokbex_input
+
+
 def init_curl():
     if sys.platform=='win32':
         path='./Library/abuse-ssl-bypass-waf/curl/I386/CURL.EXE'
@@ -14,17 +26,13 @@ def init_curl():
 
 curl=init_curl()
 
-def withexit_input(*s,**d):
-    data=input(*s,**d).strip()
-    if data=='exit()':exit(0)
-    return data
 
 def run(args):
     os.system('""'+curl+'" '+args+'"')
 
 def main():
     while 1:
-        args=withexit_input('curl>')
+        args=autokbex_input('curl>')
         run(args)
 
 

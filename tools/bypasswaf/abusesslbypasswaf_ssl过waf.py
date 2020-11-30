@@ -15,6 +15,7 @@ if not path in (p.replace('\\','/') for p in sys.path):
     sys.path.append(path)
 #print(path)
 from py_env_util import PY_ENV_CL
+from auto_input import autokbex_input
 
 pyenv=PY_ENV_CL('abuse-ssl-bypass-waf',2).get_pyenv()
 abusepy='./Library/abuse-ssl-bypass-waf/abuse-ssl-bypass-waf.py'
@@ -27,15 +28,11 @@ def banner():
     print('[+]这里是使用ssl协议绕过waf的工具')
     print('[+]使用了github里的abuse-ssl-bypass-waf')
 
-def withexit_input(s):
-    data=input(s).strip()
-    if data=='exit()':exit(0)
-    return data
 
 def inputargs():
-    target=withexit_input('target(the host ip or domain):')
-    regex=withexit_input('regex(hit waf keyword or regex)')
-    threads=withexit_input('thread(numbers of multi threads):')
+    target=autokbex_input('target(the host ip or domain):')
+    regex=autokbex_input('regex(hit waf keyword or regex)')
+    threads=autokbex_input('thread(numbers of multi threads):')
 
     args=''
     if target=='':

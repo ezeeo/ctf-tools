@@ -16,6 +16,7 @@ else:
 if not path in (p.replace('\\','/') for p in sys.path):
     sys.path.append(path)
 from py_env_util import PY_ENV_CL,PY_PIP_CI
+from auto_input import autokbex_input
 
 python2_env=PY_ENV_CL('cves',2).get_pyenv()
 python3_env=PY_ENV_CL('cves',3).get_pyenv()
@@ -54,14 +55,14 @@ def get_py_env():
         with open(cvebase+'py2_env.ini','r',encoding='utf-8') as f:
             python2_env=f.read().strip()
     else:
-        python2_env=input('[!]python2 环境不存在,请输入python2可执行文件目录:')
+        python2_env=autokbex_input('[!]python2 环境不存在,请输入python2可执行文件目录:')
         with open(cvebase+'py2_env.ini','w',encoding='utf-8') as f:
             f.write(python2_env)
     if os.path.exists(cvebase+'py3_env.ini'):
         with open(cvebase+'py3_env.ini','r',encoding='utf-8') as f:
             python3_env=f.read().strip()
     else:
-        python3_env=input('[!]python3 环境不存在,请输入python3可执行文件目录:')
+        python3_env=autokbex_input('[!]python3 环境不存在,请输入python3可执行文件目录:')
         with open(cvebase+'py3_env.ini','w',encoding='utf-8') as f:
             f.write(python3_env)
 
@@ -124,10 +125,8 @@ if len(sys.argv)==2:
     now_env=eval('python'+str(check_py23(file_name))+'_env')
     while 1:
         print(os.path.basename(file_name),'-> ',end='')
-        args=input('input args:')
-        if args=='exit()':
-            exit(0)
-        elif args=='':
+        args=autokbex_input('input args:')
+        if args=='':
             continue
         os.system(now_env+' '+file_name+' '+args)
 
@@ -140,10 +139,8 @@ if __name__ == "__main__":
     for i in allcve:print('[+]'+os.path.split(i)[1])
     
     while True:
-        data=input('cve>')
-        if data=='exit()':
-            exit()
-        elif data=='':
+        data=autokbex_input('cve>')
+        if data=='':
             continue
         file_name=match(allcve,data)
         if file_name==False:
@@ -154,9 +151,8 @@ if __name__ == "__main__":
         print('now env:',now_env)
         while 1:
             print(os.path.basename(file_name),'-> ',end='')
-            args=input('input args:')
-            if args=='exit()':
-                break
-            elif args=='':
+            args=autokbex_input('input args:')
+
+            if args=='':
                 continue
             os.system(now_env+' '+file_name+' '+args)

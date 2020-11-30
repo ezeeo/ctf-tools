@@ -31,6 +31,8 @@ def get_router_ip():
                 continue
             else:
                 tmp=l.strip().split(' ')[-1]
+                if tmp.startswith('['):
+                    tmp=tmp[1:-1]
                 if tmp[:3] in ('10.','172','192'):
                     result=tmp
                     break

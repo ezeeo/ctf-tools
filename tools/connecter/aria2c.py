@@ -15,12 +15,12 @@ if not path in (p.replace('\\','/') for p in sys.path):
     sys.path.append(path)
 
 from download_util import Aria2_Downloader
-from tool_input import withexit_input
+from auto_input import autokbex_input
 
 def download():
-    url=withexit_input('url:')
+    url=autokbex_input('url:')
     while 1:
-        path=withexit_input('path(默认为output):')
+        path=autokbex_input('path(默认为output):')
         if path=='':path='output'
         if os.path.exists(path):
             if os.path.isdir(path):
@@ -29,8 +29,8 @@ def download():
                 print('[!]路径必须是文件夹')
         else:
             print('[!]路径不存在')
-    file_name=withexit_input('filename:')
-    t_num=withexit_input('thread num(默认6):')
+    file_name=autokbex_input('filename:')
+    t_num=autokbex_input('thread num(默认6):')
     if t_num=='':
         Dld=Aria2_Downloader(path)
     elif t_num.isdigit():

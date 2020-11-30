@@ -13,7 +13,7 @@ else:
 if not path in (p.replace('\\','/') for p in sys.path):
     sys.path.append(path)
 from get_func_from_pyfile import pyfunc_util
-from tool_input import withexit_input
+from auto_input import autokbex_input
 
 allow_mode=('php','jsp','asp','aspx')
 
@@ -29,7 +29,7 @@ def load_funcs(mode):
 def select_mode():
     for i,mode in enumerate(allow_mode):
         print(i+1,':',mode)
-    mode=withexit_input('选择语言模式:')
+    mode=autokbex_input('选择语言模式:')
     if not mode.isdigit():
         print('[!]请输入数字')
         return False
@@ -45,7 +45,7 @@ def select_func(F):
     for i,func in enumerate(funcs):
         print(i+1,':',func[0],func[2])
 
-    fno=withexit_input('选择马(数字/all):')
+    fno=autokbex_input('选择马(数字/all):')
     if fno.lower()=='all':return 'all'
     if not fno.isdigit():
         print('[!]请输入数字')
@@ -59,7 +59,7 @@ def select_func(F):
 def run_func(F,func,pwd=None):
     if 'pwd' in func[1]:
         if pwd==None:
-            pwd=withexit_input('输入链接密码:')
+            pwd=autokbex_input('输入链接密码:')
         return F.run(func[0],pwd=pwd)
     else:
         return F.run(func[0])
@@ -73,7 +73,7 @@ def main():
     func=select_func(F)
     if func==False:return False
     elif func=='all':
-        pwd=withexit_input('输入链接密码:')
+        pwd=autokbex_input('输入链接密码:')
         for f in F.get_funclist():
             print('-'*50)
             print(run_func(F,f,pwd))

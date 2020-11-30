@@ -25,8 +25,7 @@ def write(strs):
     f.write(img)
     f.close()
     print('[+]save to ./output/b64.jpg')
-    o=input('open?')
-    if o=='Y' or o=='y':
+    if input('open?').strip().lower()=='y':
         os.system('start ./output/b64.jpg')
 
 if len(sys.argv)==2:

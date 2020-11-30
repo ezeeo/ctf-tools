@@ -16,6 +16,8 @@ else:
 if not path in (p.replace('\\','/') for p in sys.path):
     sys.path.append(path)
 from py_env_util import PY_ENV_CL,PY_PIP_CI
+from auto_input import autokbex_input
+
 
 pyenv=PY_ENV_CL('Windows-Exploit-Suggester',2).get_pyenv()
 expsuggesterpy='./Library/Windows-Exploit-Suggester/Windows-Exploit-Suggester.py'
@@ -31,14 +33,8 @@ def banner():
     print('[+]首先需要目标机的systeminfo文件')
     print('[+]支持自动检测数据库过期情况')
     
-
-def withexit_input(s):
-    data=input(s).strip()
-    if data=='exit()':exit(0)
-    return data
-
 def inputargs():
-    systeminfo_path=withexit_input('systeminfo文件路径:')
+    systeminfo_path=autokbex_input('systeminfo文件路径:')
     if not os.path.exists(systeminfo_path):
         print('[+]错误:文件不存在')
         return

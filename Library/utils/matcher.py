@@ -129,7 +129,8 @@ if __name__ == "__main__":
     #gen_match_str(30)
     s='2019-09-10-mssb.xls'
     subs='2*.xls*'
-
-    M=Matcher(subs)
+    s=''
+    subs='*'
+    M=Matcher(subs,tuple())
     print(M.is_match(s))
     
